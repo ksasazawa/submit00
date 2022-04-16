@@ -1,12 +1,14 @@
 import csv
 import itertools
 
+csv_path = 'submit00/task_1/kimetsu02 - シート1.csv'
+
 # 検索ツール
 def search():
     word =input("鬼滅の登場人物の名前を入力してください >>> ")
     
     # CSVを読み込み、sourceリストに格納
-    with open('submit00/task_1/kimetsu02 - シート1.csv') as f:
+    with open(csv_path) as f:
         reader = csv.reader(f)
         source = [row for row in reader]
         source = list(itertools.chain.from_iterable(source))
@@ -18,12 +20,12 @@ def search():
     # 見つからなかった場合    
     else:
         # 追記
-        with open('submit00/task_1/kimetsu02 - シート1.csv', 'a') as f:
+        with open(csv_path, 'a') as f:
             writer = csv.writer(f)
             writer.writerow([word])
         
         # 再読み込み    
-        with open('submit00/task_1/kimetsu02 - シート1.csv') as f:
+        with open(csv_path) as f:
             reader = csv.reader(f)
             source = [row for row in reader]
             source = list(itertools.chain.from_iterable(source))  
