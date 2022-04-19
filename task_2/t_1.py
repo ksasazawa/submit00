@@ -1,16 +1,18 @@
-
-from encodings import utf_8_sig
 import os
+import datetime
+
 from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import pandas as pd
-import logging
 
-logging.basicConfig(filename='/Users/estyle-086/Desktop/Project-01/submit00/task_2/log.txt', level=logging.INFO)
 
+# LOGファイルパスの雛形を作成
+LOG_FILE_PATH = "/Users/estyle-086/Desktop/Project-01/submit00/task_2/log_{datetime}.log"
+# 上記パスの変数datetimeに、現在の時刻を型指定して入れ込む
+log_file_path = LOG_FILE_PATH.format(datetime=datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
 
 
 
@@ -36,6 +38,19 @@ def set_driver(hidden_chrome: bool=False):
     # ChromeのWebDriverオブジェクトを作成する。
     service=Service(ChromeDriverManager().install())
     return Chrome(service=service, options=options)
+
+def makedir_for_filepath(filepath: str):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    
+def log(txt):
+    now = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+    # %sは文字列型を指定しており、右側のlog,now.txtを受けている。
+    logStr = '[%s: %s] %s' % ('log',now , txt)
+    # ログ出力
+    makedir_for_filepath(log_file_path)
+    with open(log_file_path, 'a', encoding='utf-8_sig') as f:
+        f.write(logStr + '\n')
+    print(logStr)
 
 
 def main():
@@ -99,10 +114,10 @@ def main():
         for name_elm, job_elm in zip(name_elms, job_elms):
             ### 課題６：エラーが起きてもスキップする。
             try:
-                print(name_elm.text)
+                log(name_elm.text)
                 ### 課題２：求人名クラスからaタグのテキストを取得。
                 job_elm = job_elm.find_element(by=By.TAG_NAME, value="a").get_attribute("textContent")
-                print(job_elm)
+                log(job_elm)
                 
                 df = df.append(
                     {"会社名": name_elm.text, 
@@ -114,7 +129,7 @@ def main():
         try:    
             driver.get(driver.find_element(by=By.CLASS_NAME, value="iconFont--arrowLeft").get_attribute("href"))
         except:
-            print("最後のページです。")
+            log("最後のページです。")
             break
     ### 課題５：csvファイルへの出力    
     df.to_csv("/Users/estyle-086/Desktop/Project-01/submit00/task_2/求人一覧.csv", encoding="utf-8_sig")    
@@ -125,7 +140,5 @@ def main():
 if __name__ == "__main__":
     main()
 
-### 課題７：ログファイル出力
-logging.info('ログをログファイルに出力します。')
     
     
