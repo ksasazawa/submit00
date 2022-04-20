@@ -123,8 +123,8 @@ def main():
                     {"会社名": name_elm.text, 
                         "求人名": job_elm}, 
                     ignore_index=True)
-            except:
-                continue
+            except Exception as e:
+                print(f"error:{e}")
         ### 課題３：2ページ目以降の情報も取得
         try:    
             driver.get(driver.find_element(by=By.CLASS_NAME, value="iconFont--arrowLeft").get_attribute("href"))
@@ -132,7 +132,7 @@ def main():
             log("最後のページです。")
             break
     ### 課題５：csvファイルへの出力    
-    df.to_csv("/Users/estyle-086/Desktop/Project-01/submit00/task_2/求人一覧.csv", encoding="utf-8_sig")    
+    df.to_csv("./求人一覧.csv", encoding="utf-8_sig")    
         
 
 
