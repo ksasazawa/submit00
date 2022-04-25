@@ -1,0 +1,48 @@
+<html>
+    <head>
+        <title>eelテスト</title>
+        <link rel="stylesheet" href="./style.css">
+    </head>
+    <body>
+        <h2>eelテスト</h2>
+        <table>
+            <tr>
+                <th>CSVファイル名</th>
+                <td><input id="csv_search" type="csv_search" name="csv_search" placeholder="ファイル名"></td>
+            </tr>
+            <tr>
+                <th>検索ワード</th>
+                <td><input id="search" type="search" name="search" placeholder="キーワードを入力"><input id="submit" type="submit" name="submit" value="検索"></td>
+            </tr>
+        </table>
+        <textarea id="target"></textarea>
+        <script type="text/javascript" src="./eel.js"></script>
+        <script>
+            var search = document.getElementById('search');
+            var csv_search = document.getElementById('csv_search');            
+            var kimetsu_chars = [];
+            //クリックがあった場合の処理
+            submit.addEventListener('click', () => {
+                //空欄だった場合
+                if(search.value=="" || csv_search.value==""){
+                    alert('検索ワードを入力してください');
+                }
+                //入力があった場合
+                else{
+                    async function run(){
+                        let kimetsu_char = await eel.kimetsu_search(search.value, csv_search.value)()
+                        //入力値を配列に格納
+                        kimetsu_chars.push(kimetsu_char)
+                        //テキストエリアに配列を改行して表示
+                        document.getElementById("target").innerHTML = kimetsu_chars.join('\n')
+                    }
+                    run();
+                }
+            });
+
+            eel.expose(view_log_js);
+            function view_log_js(text){
+            };
+        </script>
+    </body>
+</html>
