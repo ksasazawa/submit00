@@ -1,0 +1,83 @@
+<html>
+    <head>
+        <title>eelテスト</title>
+        <link rel="stylesheet" href="./style.css">
+    </head>
+    <body>
+        <h2>eelテスト</h2>
+        <table>
+            <tr>
+                <th>商品コードを入力してください。</th>
+                <td><input id="item_code" type="item_code" name="item_code" placeholder="商品コード"></td>
+            </tr>
+            <tr>
+                <th>個数を入れてください</th>
+                <td><input id="item_count" type="item_count" name="item_count" placeholder="個数">
+                <input id="item_info" type="submit" name="item_info" value="入力">
+                <input id="calc" type="submit" name="calc" value="お会計"></td>
+            </tr>
+        </table>
+        <textarea id="target"></textarea>
+        <br>
+        <input id="money" type="money" name="money" placeholder="お支払い金額">
+        <input id="pay" type="submit" name="pay" value="お支払い">
+        <script type="text/javascript" src="./eel.js"></script>
+        <script>
+        var item_code = document.getElementById('item_code');
+        var item_count = document.getElementById('item_count');          
+        var item_outputs = [];
+        var money = document.getElementById("money");
+        
+        //「入力」クリックがあった場合の処理
+        item_info.addEventListener('click', () => {
+            //空欄だった場合
+            if(item_code.value=="" || item_count.value==""){
+                alert('入力してください');
+            }
+            //入力があった場合
+            else{
+                async function run(){
+                    let item_output = await eel.main_1(item_code.value, item_count.value)()
+                    //入力値を配列に格納
+                    item_outputs.push(item_output)
+                    //テキストエリアに配列を改行して表示
+                    document.getElementById("target").innerHTML = item_outputs.join('\n')
+                }
+                run();
+            }
+        });
+
+        //「お会計」クリックがあった場合の処理
+        calc.addEventListener('click', () => {
+            async function run(){
+                var sum_price = await eel.main_2()()
+                //オーダー登録がなかった場合
+                if(sum_price==0){
+                    alert("オーダー登録してから行ってください。");
+                }
+                //オーダー登録があった場合
+                else{
+                    target.insertAdjacentText('beforeend', '\n' + "合計金額\n" + sum_price) 
+                }
+            }
+            run();
+        });
+
+        //「お支払い」クリックがあった場合の処理
+        pay.addEventListener('click', () => {
+            async function run(){
+                var payment = await eel.main_3(money.value)()
+                //オーダー登録がなかった場合
+                if(money.value==""){
+                    alert("お支払い金額を入力してください。");
+                }
+                //オーダー登録があった場合
+                else{
+                    target.insertAdjacentText('beforeend', "\nお支払い\n" + money.value + "\nお釣り\n" + payment) 
+                }
+            }
+            run();
+        });
+        </script>
+    </body>
+</html>
