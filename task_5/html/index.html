@@ -73,7 +73,8 @@
                 }
                 //オーダー登録があった場合
                 else{
-                    target.insertAdjacentText('beforeend', "\nお支払い\n" + money.value + "\nお釣り\n" + payment) 
+                    target.insertAdjacentText('beforeend', "\nお支払い\n" + money.value + "\nお釣り\n" + payment)
+                    alert("お釣りは" + payment + "円です。") 
                 }
             }
             run();
