@@ -1,5 +1,6 @@
 ﻿# from api_02 import get_api
 import requests
+from api_02 import item_search
 import pprint 
 
 def get_api(url):
@@ -22,8 +23,3 @@ def test_get_api():
     
     assert len(res["Items"]) == 0
 
-def test_2():
-    url = "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20170706?format=json&keyword=PS5&applicationId=1019079537947262807"
-    res = get_api(url=url)
-    
-    assert res.get("Items") == None
