@@ -1,0 +1,27 @@
+POST https://app.rakuten.co.jp/services/api/IchibaItem/Search/20170706 HTTP/1.1
+content-type: application/json
+
+{
+    "format": "json",
+    "keyword": "鬼滅",
+    "applicationId": "1019079537947262807",
+    "minPrice": 111
+}
+
+POST https://app.rakuten.co.jp/services/api/Product/Search/20170426 HTTP/1.1
+content-type: application/json
+
+{
+    "format": "json",
+    "applicationId": "1019079537947262807",
+    "productId": "3cae0110c1371d976812ac71abee8d4a"
+}
+
+POST https://app.rakuten.co.jp/services/api/IchibaItem/Ranking/20170628 HTTP/1.1
+content-type: application/json
+
+{
+    "format": "json",
+    "applicationId": "1019079537947262807",
+    "genreId": "101941"
+}
