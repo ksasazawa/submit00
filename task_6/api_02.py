@@ -8,8 +8,8 @@ def get_api(url, params: dict):
     return result.json()
 
 # 課題２
-def item_search():
-    keyword = "鬼滅"
+def item_search(keyword: str):
+    keyword = keyword
     url = "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20170706"
     
     # パラメータを記述
@@ -25,7 +25,7 @@ def item_search():
     for i in range(len(res['Items'])):
         print(f"商品名>>{res['Items'][i]['Item']['itemName']}\n価格>>{res['Items'][i]['Item']['itemPrice']}\n")
 
-    
-item_search()
+keyword = input("検索ワードを入力してください。：")
+item_search(keyword)
     
     
