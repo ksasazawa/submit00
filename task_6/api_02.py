@@ -24,8 +24,12 @@ def item_search(keyword: str):
     
     for i in range(len(res['Items'])):
         print(f"商品名>>{res['Items'][i]['Item']['itemName']}\n価格>>{res['Items'][i]['Item']['itemPrice']}\n")
+        
+    return res
 
-keyword = input("検索ワードを入力してください。：")
-item_search(keyword)
+
+if __name__ == "__main__":
+    keyword = input("検索キーワードを入力してください >>> ")
+    item_search(keyword)
     
     

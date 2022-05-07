@@ -22,6 +22,8 @@ def product_price_limit():
     
     print(f"商品名>>{res['Products'][0]['Product']['productName']}\n最高値>>{res['Products'][0]['Product']['maxPrice']}\n最安値>>{res['Products'][0]['Product']['minPrice']}")
     
+    return res
+    
 
 product_price_limit()
 

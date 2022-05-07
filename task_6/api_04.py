@@ -27,5 +27,7 @@ def product_ranking():
     
     rk.to_csv('./rank.csv', encoding="utf-8")
     
+    return res
+    
 
 product_ranking()

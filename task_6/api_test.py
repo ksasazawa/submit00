@@ -1,6 +1,8 @@
 ﻿# from api_02 import get_api
 import requests
 from api_02 import item_search
+from api_03 import product_price_limit
+from api_04 import product_ranking
 import pprint 
 
 def get_api(url):
@@ -22,4 +24,28 @@ def test_get_api():
     res = get_api(url=url)
     
     assert len(res["Items"]) == 0
+    
+def test_item_search():
+    keyword = "鬼滅"
+    res = item_search(keyword)
+    
+    assert res["Items"]
+    assert res["Items"][0]["Item"]["itemName"]
+    assert res["Items"][0]["Item"]["itemPrice"]
+    
+def test_product_price_limit():
+    res = product_price_limit()
+    
+    assert res["Products"]
+    assert res["Products"][0]["Product"]["minPrice"]
+    assert res["Products"][0]["Product"]["maxPrice"]
+    
+def test_product_ranking():
+    res = product_ranking()
+    
+    assert res["Items"]
+    assert res["Items"][0]["Item"]["itemName"]
+    assert res["Items"][0]["Item"]["itemPrice"]
+
+
 
