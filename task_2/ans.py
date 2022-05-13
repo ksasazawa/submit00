@@ -10,11 +10,11 @@ import pandas as pd
 
 
 # LOGファイルパスの雛形を作成
-LOG_FILE_PATH = "./log_{datetime}.log"
+LOG_FILE_PATH = "log/log_{datetime}.log"
 # 上記パスの変数datetimeに、現在の時刻を型指定して入れ込む
 log_file_path = LOG_FILE_PATH.format(datetime=datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
 # CSVファイルパスの雛形を作成
-EXP_CSV_PATH = "./exp_list_{search_keyword}_{datetime}.csv"
+EXP_CSV_PATH = "csv/exp_list_{search_keyword}_{datetime}.csv"
 
 # hidden_chromeという変数はブール値で受け付け、デフォルトはfalseにする。
 # https://owatata.com/2020/12/10/%E3%80%90python%E3%80%91%E5%9E%8B%E3%83%92%E3%83%B3%E3%83%88%E3%81%97%E3%81%A6%E3%81%84%E3%82%8B%E5%BC%95%E6%95%B0%E3%81%B8%E3%81%AE%E3%83%87%E3%83%95%E3%82%A9%E3%83%AB%E3%83%88%E5%80%A4%E6%8C%87/
