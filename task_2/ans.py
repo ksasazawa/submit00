@@ -81,18 +81,20 @@ def main(is_option: bool = False, page_limit: int=5, hidden_chrome: bool=False):
     if is_option:
         # Option課題の場合は、URLを直接編集する
         driver.get(f"https://tenshoku.mynavi.jp/list/kw{search_keyword}/?jobsearchType=14&searchType=18")
-        time.sleep(5)
+        time.sleep(1)
     else:
         driver.get("https://tenshoku.mynavi.jp/")
-        time.sleep(5)
+        time.sleep(1)
         try:
             # ポップアップを閉じる（seleniumだけではクローズできない）
             # driver.execute_scriptでJavaScriptを実行できる。https://qiita.com/memakura/items/20a02161fa7e18d8a693
+            # driver.find_elementでは、ウィンドウ外のボタンのためクリックができない。https://teratail.com/questions/210782
             driver.execute_script('document.querySelector(".karte-close").click()')
             time.sleep(5)
             # ポップアップを閉じる
             driver.execute_script('document.querySelector(".karte-close").click()')
         except:
+            print("エラー")
             pass
 
         # 検索窓に入力
@@ -144,13 +146,13 @@ def main(is_option: bool = False, page_limit: int=5, hidden_chrome: bool=False):
                     }
                 )
                 # 成功パターン
-                log(f"[成功]{count} 件目 (page: {page}) : {name}")
                 success+=1
+                log(f"[成功]{count} 件目 (page: {page}) : {name}")
             except Exception as e:
                 # 失敗パターン
+                fail+=1
                 log(f"[失敗]{count} 件目 (page: {page})")
                 log(e)
-                fail+=1
             finally:
                 # ページ最下部まで進んだらfor文が終了し、次のページへ。
                 count+=1
