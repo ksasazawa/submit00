@@ -1,12 +1,12 @@
 import os
 import time
 import datetime
+import pandas as pd
 
 from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
-import pandas as pd
 
 
 # LOGファイルパスの雛形を作成
@@ -16,13 +16,11 @@ log_file_path = LOG_FILE_PATH.format(datetime=datetime.datetime.now().strftime('
 # CSVファイルパスの雛形を作成
 EXP_CSV_PATH = "csv/exp_list_{search_keyword}_{datetime}.csv"
 
-# hidden_chromeという変数はブール値で受け付け、デフォルトはfalseにする。
-# https://owatata.com/2020/12/10/%E3%80%90python%E3%80%91%E5%9E%8B%E3%83%92%E3%83%B3%E3%83%88%E3%81%97%E3%81%A6%E3%81%84%E3%82%8B%E5%BC%95%E6%95%B0%E3%81%B8%E3%81%AE%E3%83%87%E3%83%95%E3%82%A9%E3%83%AB%E3%83%88%E5%80%A4%E6%8C%87/
-def set_driver(hidden_chrome: bool = True):
+
+# ドライバの定義
+def set_driver(hidden_chrome: bool = False):
         
-    # ブラウザのバージョンを格納
     USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36"
-    # ChromeOptionsを呼び出し
     options = ChromeOptions()
 
     if hidden_chrome:
@@ -37,17 +35,15 @@ def set_driver(hidden_chrome: bool = True):
     
     # ChromeのWebDriverオブジェクトを作成する。(Selenium version4からは以下のようにServiceを使用することが推奨される)
     service=Service(ChromeDriverManager().install())
-    # serviceとoptionsを指定してドライバを作成。
     return Chrome(service=service, options=options)
 
 
+# ファイルの作成
 def makedir_for_filepath(filepath: str):
-    # log_filej_pathを渡してログファイルを作成する。makedirsにすることで、下の階層にも作ることができる。
-    # exist_ok=Trueとすると、フォルダが存在してもエラーにならない
-    # https://note.nkmk.me/python-os-mkdir-makedirs/
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
 
+# ログとコンソールへの出力
 def log(txt):
     now = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
     # %sは文字列型を指定しており、右側のlog,now.txtを受けている。
@@ -59,6 +55,7 @@ def log(txt):
     print(logStr)
 
 
+# テーブルから初年度年収を探して返す
 def find_table_col_by_header_name(th_elms, td_elms, target:str):
     # 各求人のテーブルからthとtdを取得してforで回す
     for th_elm,td_elm in zip(th_elms,td_elms):
@@ -67,6 +64,7 @@ def find_table_col_by_header_name(th_elms, td_elms, target:str):
             return td_elm.text
 
 
+# メイン処理
 def main(is_option: bool = False, page_limit: int=5, hidden_chrome: bool=False):
     # 処理開始のログ出力
     log(f"処理開始: is_option={is_option}, page_limit={page_limit}, hidden_chrome={hidden_chrome}")
@@ -79,7 +77,7 @@ def main(is_option: bool = False, page_limit: int=5, hidden_chrome: bool=False):
     
     # Webサイトを開く
     if is_option:
-        # Option課題の場合は、URLを直接編集する
+        # URLで直接遷移するパターン
         driver.get(f"https://tenshoku.mynavi.jp/list/kw{search_keyword}/?jobsearchType=14&searchType=18")
         time.sleep(1)
     else:
@@ -87,8 +85,6 @@ def main(is_option: bool = False, page_limit: int=5, hidden_chrome: bool=False):
         time.sleep(1)
         try:
             # ポップアップを閉じる（seleniumだけではクローズできない）
-            # driver.execute_scriptでJavaScriptを実行できる。https://qiita.com/memakura/items/20a02161fa7e18d8a693
-            # driver.find_elementでは、ウィンドウ外のボタンのためクリックができない。https://teratail.com/questions/210782
             driver.execute_script('document.querySelector(".karte-close").click()')
             time.sleep(5)
             # ポップアップを閉じる
@@ -112,14 +108,6 @@ def main(is_option: bool = False, page_limit: int=5, hidden_chrome: bool=False):
     while page <= page_limit:
         # 求人の要素を丸ごと取得
         recruit_elms = driver.find_elements(by=By.CSS_SELECTOR, value=".cassetteRecruit")
-        '''
-        ## 色々な指定方法
-        by=By.CSS_SELECTOR のようにして指定方法を選択
-        By.ID By.NAME By.CLASS_NAME By.LINK_TEXT などがあるので
-        Byと入力して、VSCODEの予測変換で確認してみると良いと思います。
-        概ねCSS_SELECTORで網羅できるので基本はCSS_SELECTORを推奨ですが
-        NAMEはSELECTORで指定すると面倒なので、NAMEを使った方が楽です。
-        '''
         
         # 1ページ分繰り返し
         for recruit_elm in recruit_elms:
@@ -159,8 +147,7 @@ def main(is_option: bool = False, page_limit: int=5, hidden_chrome: bool=False):
 
         # 次のページボタンがあればリンクを取得して画面遷移、なければ終了
         next_page = driver.find_elements(by=By.CLASS_NAME, value="iconFont--arrowLeft")
-        # if len(next_page) >= 1: # Python公式として非推奨の方式となったため変更
-        # next_pageにdriverで取得した要素が入っていれば（次ページがあれば）実行する。https://www.lifewithpython.com/2013/02/python-if-statement-data-type.html
+        # next_pageにdriverで取得した要素が入っていれば（次ページがあれば）実行する。
         if next_page:
             next_page_link = next_page[0].get_attribute("href")
             driver.get(next_page_link)
@@ -175,25 +162,15 @@ def main(is_option: bool = False, page_limit: int=5, hidden_chrome: bool=False):
     # csv出力（encodingはWindowsのExcelの文字化け防止のためにutf-8-sig(BOM付きUTF8)とする
     makedir_for_filepath(EXP_CSV_PATH)
     # df.appendは非推奨になったため、from_dictを使用する
-    # https://www.yutaka-note.com/entry/pandas_dict
     df = pd.DataFrame.from_dict(recruits, dtype=object)
     df.to_csv(EXP_CSV_PATH.format(search_keyword=search_keyword, datetime=now), encoding="utf-8-sig")
-    
-    # ログの役割は、開発時や後からプログラムの動作をチェックするために用いる
-    # ログがないと、お客から何か動作がおかしいと指摘されても、確認するすべがない。
     log(f"処理完了 成功件数: {success} 件 / 失敗件数: {fail} 件")
 
     
 # 直接起動された場合はmain()を起動(モジュールとして呼び出された場合は起動しないようにするため)
 if __name__ == "__main__":
     main()
-    '''
-    課題の範囲ではないが、引数を簡単に処理できるので便利
-    - 以下ように指定できる（例：is_option=True, page_limit=3 と指定される）
-     python scraping.py 1 3
-    - 一部の引数のみの指定も可能(chromeを非表示) ハイフン２個と変数名で指定する
-     python scraping.py --hidden-chrome
-    '''
+
 
               
     
