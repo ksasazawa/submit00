@@ -42,23 +42,60 @@ def set_driver():
 # メイン処理
 def main():
     
+    search_csv = input("ASINを取得するCSV名を指定してください。>>")
     item_info = []
     # selenium ver
     driver = set_driver()
     url = "https://www.amazon.co.jp/dp/{asin}"
     
-    df = pd.read_csv("test.csv")
+    df = pd.read_csv(os.path.join(os.getcwd(), search_csv))
     for asin in df['ASIN']:
         driver.get(url.format(asin=asin))
         name = driver.find_element(by=By.CSS_SELECTOR, value=".product-title-word-break").text
-        # price = driver.find_element(by=By.ID, value="snsDetailPagePrice")
-        # price = driver.find_element(by=By.ID, value="sns-base-price").text
-        # price = driver.find_element_by_id("sns-base-price")
+        price = ""
+        prime = ""
+        review_count = driver.find_element(by=By.CSS_SELECTOR, value="#reviewsMedley > div > div.a-fixed-left-grid-col.a-col-left > div.a-section.a-spacing-none.a-spacing-top-mini.cr-widget-ACR > div.a-row.a-spacing-medium.averageStarRatingNumerical > span").text.rstrip("件のグローバル評価")
+        review = driver.find_element(by=By.CSS_SELECTOR, value="    #reviewsMedley > div > div.a-fixed-left-grid-col.a-col-left > div.a-section.a-spacing-none.a-spacing-top-mini.cr-widget-ACR > div.a-fixed-left-grid.AverageCustomerReviews.a-spacing-small > div > div.a-fixed-left-grid-col.aok-align-center.a-col-right > div > span > span").text.lstrip("星5つ中の")
+        image_url = driver.find_element(by=By.ID, value="landingImage").get_attribute("src")
+        # アイテムリストがある場合
+        try:
+            driver.find_element(by=By.CSS_SELECTOR, value="#olpLinkWidget_feature_div > div.a-section.olp-link-widget > span > a > div > div").click()
+            time.sleep(2)
+            information_block = driver.find_elements(by=By.CSS_SELECTOR, value=".aod-information-block")
+            # アイテムのリストから一つずつ情報を取得
+            for information in information_block:
+                status = information.find_element(by=By.TAG_NAME, value="h5").text
+                flg = False
+                rows = information.find_elements(by=By.CSS_SELECTOR, value=".a-fixed-left-grid-inner")
+                # アイテムの情報から１行ずつ値を取得し、出荷元の情報なら変数に格納
+                for row in rows:
+                    head = row.find_elements(by=By.TAG_NAME, value="span")
+                    if head[0].text=="出荷元" and head[1].text=="Amazon" and status=="新品":
+                        # 最低価格
+                        price = information.find_element(by=By.CSS_SELECTOR, value=".a-price-whole").text
+                        # prime
+                        prime = "prime"
+                        flg = True
+                        break                        
+                    else:
+                        continue
+                # 対象データが取得できたらアイテムリストのループから抜ける
+                if flg==True:
+                    break
+        # アイテムリストがない場合                                        
+        except:
+            print("エラー")
+            pass
+        
         item_info.append({
             "ASIN": asin,
             "商品名": name,
             "URL": url.format(asin=asin),
-            # "値段": price,         
+            "最低価格": price,
+            "prime": prime,
+            "評価件数": review_count,
+            "評価": review,
+            "画像URL": image_url
         })
 
     # CSVファイル保存処理
@@ -69,3 +106,12 @@ def main():
         
 if __name__ == "__main__":        
     main()
+    
+    #aod-price-1 > span > span:nth-child(2) > span.a-price-whole
+    #aod-price-2 > span > span:nth-child(2) > span.a-price-whole
+    #aod-price-3 > span > span:nth-child(2) > span.a-price-whole
+    #aod-price-2 > span > span:nth-child(2) > span.a-price-whole
+    
+    #aod-offer-shipsFrom > div > div > div.a-fixed-left-grid-col.a-col-right > span
+    #reviewsMedley > div > div.a-fixed-left-grid-col.a-col-left > div.a-section.a-spacing-none.a-spacing-top-mini.cr-widget-ACR > div.a-fixed-left-grid.AverageCustomerReviews.a-spacing-small > div > div.a-fixed-left-grid-col.aok-align-center.a-col-right > div > span > span
+    #reviewsMedley > div > div.a-fixed-left-grid-col.a-col-left > div.a-section.a-spacing-none.a-spacing-top-mini.cr-widget-ACR > div.a-fixed-left-grid.AverageCustomerReviews.a-spacing-small > div > div.a-fixed-left-grid-col.aok-align-center.a-col-right > div > span > span
