@@ -84,8 +84,10 @@ def main():
                     break
         # アイテムリストがない場合                                        
         except:
-            print("エラー")
-            pass
+            shipper = driver.find_element(by=By.CSS_SELECTOR, value="#tabular-buybox > div.tabular-buybox-container > div:nth-child(2) > div > span").text
+            if shipper == "Amazon":
+                prime = "prime"
+                price = driver.find_element(by=By.CSS_SELECTOR, value="#corePrice_feature_div > div > span > span:nth-child(2) > span.a-price-whole").text
         
         item_info.append({
             "ASIN": asin,
@@ -107,11 +109,8 @@ def main():
 if __name__ == "__main__":        
     main()
     
-    #aod-price-1 > span > span:nth-child(2) > span.a-price-whole
-    #aod-price-2 > span > span:nth-child(2) > span.a-price-whole
-    #aod-price-3 > span > span:nth-child(2) > span.a-price-whole
-    #aod-price-2 > span > span:nth-child(2) > span.a-price-whole
-    
-    #aod-offer-shipsFrom > div > div > div.a-fixed-left-grid-col.a-col-right > span
-    #reviewsMedley > div > div.a-fixed-left-grid-col.a-col-left > div.a-section.a-spacing-none.a-spacing-top-mini.cr-widget-ACR > div.a-fixed-left-grid.AverageCustomerReviews.a-spacing-small > div > div.a-fixed-left-grid-col.aok-align-center.a-col-right > div > span > span
-    #reviewsMedley > div > div.a-fixed-left-grid-col.a-col-left > div.a-section.a-spacing-none.a-spacing-top-mini.cr-widget-ACR > div.a-fixed-left-grid.AverageCustomerReviews.a-spacing-small > div > div.a-fixed-left-grid-col.aok-align-center.a-col-right > div > span > span
+#tabular-buybox > div.tabular-buybox-container > div:nth-child(2) > div > span
+#tabular-buybox > div.tabular-buybox-container > div:nth-child(2) > div > span
+
+#corePrice_feature_div > div > span > span:nth-child(2) > span.a-price-whole
+#corePrice_feature_div > div > span > span:nth-child(2) > span.a-price-whole
