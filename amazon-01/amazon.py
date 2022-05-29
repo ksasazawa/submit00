@@ -69,46 +69,28 @@ def main():
         review_count = driver.find_element(by=By.CSS_SELECTOR, value="#reviewsMedley > div > div.a-fixed-left-grid-col.a-col-left > div.a-section.a-spacing-none.a-spacing-top-mini.cr-widget-ACR > div.a-row.a-spacing-medium.averageStarRatingNumerical > span").text.rstrip("件のグローバル評価")
         review = driver.find_element(by=By.CSS_SELECTOR, value="    #reviewsMedley > div > div.a-fixed-left-grid-col.a-col-left > div.a-section.a-spacing-none.a-spacing-top-mini.cr-widget-ACR > div.a-fixed-left-grid.AverageCustomerReviews.a-spacing-small > div > div.a-fixed-left-grid-col.aok-align-center.a-col-right > div > span > span").text.lstrip("星5つ中の")
         image_url = driver.find_element(by=By.ID, value="landingImage").get_attribute("src")
-        # アイテムリストがある場合
-        try:
-            driver.find_element(by=By.CSS_SELECTOR, value="#olpLinkWidget_feature_div > div.a-section.olp-link-widget > span > a > div > div").click()
-            time.sleep(2)
-            try:
-                information_block = driver.find_elements(by=By.CSS_SELECTOR, value=".aod-information-block")
-                # アイテムのリストから一つずつ情報を取得
-                for information in information_block:
-                    flg = False
-                    status = information.find_element(by=By.TAG_NAME, value="h5").text
-                    rows = information.find_elements(by=By.CSS_SELECTOR, value=".a-fixed-left-grid-inner")
-                    # アイテムの情報から１行ずつ値を取得し、出荷元の情報なら変数に格納
-                    for row in rows:
-                        head = row.find_elements(by=By.TAG_NAME, value="span")
-                        if head[0].text=="出荷元" and head[1].text=="Amazon" and status=="新品":
-                            # 最低価格
-                            price = information.find_element(by=By.CSS_SELECTOR, value=".a-price-whole").text
-                            # prime
-                            prime = "prime"
-                            flg = True
-                            break                        
-                        else:
-                            continue
-                    # 対象データが取得できたらアイテムリストのループから抜ける
-                    if flg==True:
-                        break
-                log(f"{count}件目【成功！】：{name}")
-            except:
-                log(f"{count}件目【失敗、、】：{name}")
-        # アイテムリストがない場合                                        
-        except:
-            try:
-                shipper = driver.find_element(by=By.CSS_SELECTOR, value="#tabular-buybox > div.tabular-buybox-container > div:nth-child(2) > div > span").text
-                if shipper == "Amazon":
-                    prime = "prime"
-                    price = driver.find_element(by=By.CSS_SELECTOR, value="#corePrice_feature_div > div > span > span:nth-child(2) > span.a-price-whole").text
-                log(f"{count}件目【成功！】：{name}")
-            except:
-                log(f"{count}件目【失敗、、】：{name}")
+        shipper =""
+        a_box = driver.find_element(by=By.CSS_SELECTOR, value=".a-box-inner")
         
+        # バーム
+        try:
+            shipper_ = driver.find_element(by=By.ID, value="sfsb_accordion_head")
+            shipper = shipper_.find_elements(by=By.TAG_NAME, value="span")[1].text
+            if shipper=="Amazon":
+                price = driver.find_element(by=By.CSS_SELECTOR, value="#corePrice_feature_div > div > span.a-price.a-text-price.header-price.a-size-base.a-text-normal > span:nth-child(2)").text.lstrip("￥")
+                prime = "prime"
+        except:
+            rows = a_box.find_elements(by=By.CSS_SELECTOR, value=".tabular-buybox-text")
+            for row in rows:
+                if row.get_attribute("tabular-attribute-name") == "出荷元" and row.text=="Amazon":
+                    prime = "prime"
+                    # アーチピロー
+                    try:
+                        price = a_box.find_element(by=By.CSS_SELECTOR, value=".a-price-whole").text
+                    # ウルみえ
+                    except:
+                        price = driver.find_element(by=By.CSS_SELECTOR, value="#corePrice_feature_div > div > span.a-price.a-text-price.a-size-medium > span:nth-child(2)").text.lstrip("￥")
+                            
         item_info.append({
             "ASIN": asin,
             "商品名": name,
@@ -119,6 +101,10 @@ def main():
             "評価": review,
             "画像URL": image_url
         })
+        if prime == "prime":
+            log(f"{count}件目【prime！】：{name}")
+        else:
+            log(f"{count}件目【no prime】：{name}")
         count+=1
 
     # CSVファイル保存処理
