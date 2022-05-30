@@ -63,33 +63,43 @@ def main():
     
     for asin in df['ASIN']:
         driver.get(url.format(asin=asin))
+        image_url = driver.find_element(by=By.ID, value="landingImage").get_attribute("src")
         name = driver.find_element(by=By.CSS_SELECTOR, value=".product-title-word-break").text
+        try:
+            review_count = driver.find_element(by=By.CSS_SELECTOR, value="#reviewsMedley > div > div.a-fixed-left-grid-col.a-col-left > div.a-section.a-spacing-none.a-spacing-top-mini.cr-widget-ACR > div.a-row.a-spacing-medium.averageStarRatingNumerical > span").text.rstrip("件のグローバル評価")
+            review = driver.find_element(by=By.CSS_SELECTOR, value="    #reviewsMedley > div > div.a-fixed-left-grid-col.a-col-left > div.a-section.a-spacing-none.a-spacing-top-mini.cr-widget-ACR > div.a-fixed-left-grid.AverageCustomerReviews.a-spacing-small > div > div.a-fixed-left-grid-col.aok-align-center.a-col-right > div > span > span").text.lstrip("星5つ中の")      
+        except:
+            review_count = 0
+            review = ""
         price = ""
         prime = ""
-        review_count = driver.find_element(by=By.CSS_SELECTOR, value="#reviewsMedley > div > div.a-fixed-left-grid-col.a-col-left > div.a-section.a-spacing-none.a-spacing-top-mini.cr-widget-ACR > div.a-row.a-spacing-medium.averageStarRatingNumerical > span").text.rstrip("件のグローバル評価")
-        review = driver.find_element(by=By.CSS_SELECTOR, value="    #reviewsMedley > div > div.a-fixed-left-grid-col.a-col-left > div.a-section.a-spacing-none.a-spacing-top-mini.cr-widget-ACR > div.a-fixed-left-grid.AverageCustomerReviews.a-spacing-small > div > div.a-fixed-left-grid-col.aok-align-center.a-col-right > div > span > span").text.lstrip("星5つ中の")
-        image_url = driver.find_element(by=By.ID, value="landingImage").get_attribute("src")
         shipper =""
-        a_box = driver.find_element(by=By.CSS_SELECTOR, value=".a-box-inner")
         
-        # バーム
         try:
-            shipper_ = driver.find_element(by=By.ID, value="sfsb_accordion_head")
-            shipper = shipper_.find_elements(by=By.TAG_NAME, value="span")[1].text
-            if shipper=="Amazon":
+            normal_order = driver.find_element(by=By.ID, value="sfsb_accordion_head")
+        except:
+            normal_order = ""
+        # バーム
+        if normal_order != "":
+            shipper = normal_order.find_elements(by=By.TAG_NAME, value="span")[1].text
+            if shipper in "Amazon":
                 price = driver.find_element(by=By.CSS_SELECTOR, value="#corePrice_feature_div > div > span.a-price.a-text-price.header-price.a-size-base.a-text-normal > span:nth-child(2)").text.lstrip("￥")
                 prime = "prime"
-        except:
-            rows = a_box.find_elements(by=By.CSS_SELECTOR, value=".tabular-buybox-text")
-            for row in rows:
-                if row.get_attribute("tabular-attribute-name") == "出荷元" and row.text=="Amazon":
-                    prime = "prime"
-                    # アーチピロー
-                    try:
-                        price = a_box.find_element(by=By.CSS_SELECTOR, value=".a-price-whole").text
-                    # ウルみえ
-                    except:
-                        price = driver.find_element(by=By.CSS_SELECTOR, value="#corePrice_feature_div > div > span.a-price.a-text-price.a-size-medium > span:nth-child(2)").text.lstrip("￥")
+        else:
+            a_box = driver.find_element(by=By.CSS_SELECTOR, value=".a-box-inner")
+            try:
+                rows = a_box.find_elements(by=By.CSS_SELECTOR, value=".tabular-buybox-text")
+                for row in rows:
+                    if row.get_attribute("tabular-attribute-name") == "出荷元" and row.text in "Amazon":
+                        prime = "prime"
+                        # アーチピロー
+                        try:
+                            price = a_box.find_element(by=By.CSS_SELECTOR, value=".a-price-whole").text
+                        # ウルみえ
+                        except:
+                            price = driver.find_element(by=By.CSS_SELECTOR, value="#corePrice_feature_div > div > span.a-price.a-text-price.a-size-medium > span:nth-child(2)").text.lstrip("￥")
+            except:
+                pass
                             
         item_info.append({
             "ASIN": asin,
@@ -115,9 +125,3 @@ def main():
         
 if __name__ == "__main__":        
     main()
-    
-#tabular-buybox > div.tabular-buybox-container > div:nth-child(2) > div > span
-#tabular-buybox > div.tabular-buybox-container > div:nth-child(2) > div > span
-
-#corePrice_feature_div > div > span > span:nth-child(2) > span.a-price-whole
-#corePrice_feature_div > div > span > span:nth-child(2) > span.a-price-whole
