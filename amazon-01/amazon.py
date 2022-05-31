@@ -70,18 +70,17 @@ def main():
             prime = ""
             try:
                 review_count = driver.find_element(by=By.CSS_SELECTOR, value="#reviewsMedley > div > div.a-fixed-left-grid-col.a-col-left > div.a-section.a-spacing-none.a-spacing-top-mini.cr-widget-ACR > div.a-row.a-spacing-medium.averageStarRatingNumerical > span").text.rstrip("件のグローバル評価")
-                review = driver.find_element(by=By.CSS_SELECTOR, value="#reviewsMedley > div > div.a-fixed-left-grid-col.a-col-left > div.a-section.a-spacing-none.a-spacing-top-mini.cr-widget-ACR > div.a-fixed-left-grid.AverageCustomerReviews.a-spacing-small > div > div.a-fixed-left-grid-col.aok-align-center.a-col-right > div > span > span").text.lstrip("星5つ中の")      
+                review = driver.find_element(by=By.XPATH, value='//span[@data-hook="rating-out-of-text"]').text.replace("星5つ中の","")   
             except:
                 review_count = 0
                 review = ""
-            shipper =""
             try:
-                normal_order = driver.find_element(by=By.ID, value="sfsb_accordion_head")
+                new_item_box = driver.find_element(by=By.ID, value="newAccordionRow")
             except:
-                normal_order = ""
+                new_item_box = ""
             
             # 公式でない場合    
-            if normal_order == "":
+            if new_item_box == "":
                 a_box = driver.find_element(by=By.ID, value="addToCart")
                 rows = a_box.find_elements(by=By.CSS_SELECTOR, value=".tabular-buybox-text")
                 for row in rows:
@@ -124,10 +123,11 @@ def main():
                         pass                   
             # 公式販売ページの場合
             else:
-                shipper = normal_order.find_elements(by=By.TAG_NAME, value="span")[1].text
-                if shipper == "Amazon" or shipper =="Amazon.co.jp":
-                    price = driver.find_element(by=By.CSS_SELECTOR, value="#corePrice_feature_div > div > span.a-price.a-text-price.header-price.a-size-base.a-text-normal > span:nth-child(2)").text.lstrip("￥")
-                    prime = "prime"
+                rows = new_item_box.find_elements(by=By.TAG_NAME, value="span")
+                for row in rows:
+                    if row.text == "Amazon" or row.text == "Amazon.co.jp":
+                        price = new_item_box.find_elements(by=By.TAG_NAME, value="span")[1].text.lstrip("￥")
+                        prime = "prime"
             log(f"{count}件目【成功！】：{name}")
         
         except:
@@ -159,5 +159,3 @@ def main():
         
 if __name__ == "__main__":        
     main()
-
-#addToCart > div > div > div
