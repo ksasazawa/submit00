@@ -82,10 +82,11 @@ def main():
             
             # 公式でない場合    
             if normal_order == "":
-                a_box = driver.find_element(by=By.CSS_SELECTOR, value=".a-box-inner")
+                a_box = driver.find_element(by=By.ID, value="addToCart")
                 rows = a_box.find_elements(by=By.CSS_SELECTOR, value=".tabular-buybox-text")
                 for row in rows:
-                    if row.get_attribute("tabular-attribute-name") == "出荷元" and row.text in "Amazon":
+                    # ボックス内でプライム対象商品があった場合
+                    if row.get_attribute("tabular-attribute-name") == "出荷元" and (row.text == "Amazon" or row.text == "Amazon.co.jp"):
                         prime = "prime"
                         # 黒字の値段
                         try:
@@ -93,10 +94,38 @@ def main():
                         # 赤字の値段
                         except:
                             price = driver.find_element(by=By.CSS_SELECTOR, value="#corePrice_feature_div > div > span.a-price.a-text-price.a-size-medium > span:nth-child(2)").text.lstrip("￥")
+                # なかった場合は、新品＆中古品のリストまで見る。
+                if prime == "":
+                    try:
+                        driver.find_element(by=By.CSS_SELECTOR, value="#olpLinkWidget_feature_div > div.a-section.olp-link-widget > span > a > div > div").click()
+                        time.sleep(2)
+                        information_block = driver.find_elements(by=By.CSS_SELECTOR, value=".aod-information-block")
+                        # アイテムのリストから一つずつ情報を取得
+                        for information in information_block:
+                            status = information.find_element(by=By.TAG_NAME, value="h5").text
+                            flg = False
+                            rows = information.find_elements(by=By.CSS_SELECTOR, value=".a-fixed-left-grid-inner")
+                            # アイテムの情報から１行ずつ値を取得し、出荷元の情報なら変数に格納
+                            for row in rows:
+                                head = row.find_elements(by=By.TAG_NAME, value="span")
+                                if head[0].text=="出荷元" and (head[1].text=="Amazon" or head[1].text=="Amazon.co.jp") and status=="新品":
+                                    # 最低価格
+                                    price = information.find_element(by=By.CSS_SELECTOR, value=".a-price-whole").text
+                                    # prime
+                                    prime = "prime"
+                                    flg = True
+                                    break                        
+                                else:
+                                    continue
+                            # 対象データが取得できたらアイテムリストのループから抜ける
+                            if flg==True:
+                                break
+                    except:
+                        pass                   
             # 公式販売ページの場合
             else:
                 shipper = normal_order.find_elements(by=By.TAG_NAME, value="span")[1].text
-                if shipper in "Amazon":
+                if shipper == "Amazon" or shipper =="Amazon.co.jp":
                     price = driver.find_element(by=By.CSS_SELECTOR, value="#corePrice_feature_div > div > span.a-price.a-text-price.header-price.a-size-base.a-text-normal > span:nth-child(2)").text.lstrip("￥")
                     prime = "prime"
             log(f"{count}件目【成功！】：{name}")
@@ -130,3 +159,5 @@ def main():
         
 if __name__ == "__main__":        
     main()
+
+#addToCart > div > div > div
