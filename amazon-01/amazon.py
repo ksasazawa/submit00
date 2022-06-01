@@ -53,7 +53,7 @@ def set_driver():
 def main():
     
     search_csv = input("ASINを取得するCSV名を指定してください。>>")
-    df = pd.read_csv(os.path.join(os.getcwd(), search_csv))
+    df = pd.read_csv(os.path.join(os.getcwd(), search_csv), header=None, names=["ASIN"])
     
     driver = set_driver()
     url = "https://www.amazon.co.jp/dp/{asin}"
@@ -97,7 +97,7 @@ def main():
                 if prime == "":
                     try:
                         driver.find_element(by=By.CSS_SELECTOR, value="#olpLinkWidget_feature_div > div.a-section.olp-link-widget > span > a > div > div").click()
-                        time.sleep(2)
+                        time.sleep(3)
                         information_block = driver.find_elements(by=By.CSS_SELECTOR, value=".aod-information-block")
                         # アイテムのリストから一つずつ情報を取得
                         for information in information_block:
