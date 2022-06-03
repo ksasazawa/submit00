@@ -65,7 +65,11 @@ def main():
         try:     
             driver.get(url.format(asin=asin))
             name = driver.find_element(by=By.CSS_SELECTOR, value=".product-title-word-break").text
-            image_url = driver.find_element(by=By.ID, value="landingImage").get_attribute("src")
+            try:
+                image_url = driver.find_element(by=By.ID, value="landingImage").get_attribute("src")
+            except:
+                iamge_block = driver.find_element(by=By.CSS_SELECTOR, value=".itemNo0")
+                image_url = iamge_block.find_element(by=By.CSS_SELECTOR, value=".a-dynamic-image").get_attribute("src")
             price = ""
             prime = ""
             try:
