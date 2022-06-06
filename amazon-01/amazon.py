@@ -102,27 +102,21 @@ def main():
                     try:
                         driver.find_element(by=By.CSS_SELECTOR, value="#olpLinkWidget_feature_div > div.a-section.olp-link-widget > span > a > div > div").click()
                         time.sleep(3)
+                        driver.find_element(by=By.ID, value="aod-filter-string").click()
+                        aod_parent_filter = driver.find_elements(by=By.CSS_SELECTOR, value=".aod-filter-parent-filter")
+                        for aod_filter in aod_parent_filter:
+                            try:
+                                label = aod_filter.find_element(by=By.CSS_SELECTOR, value=".a-icon-prime-jp")
+                                aod_filter.find_element(by=By.CSS_SELECTOR, value=".a-icon-checkbox").click()                
+                            except:
+                                label = aod_filter.find_element(by=By.CSS_SELECTOR, value=".a-size-base")
+                                if label.text=="新品":
+                                    aod_filter.find_element(by=By.CSS_SELECTOR, value=".a-icon-checkbox").click()
+                        time.sleep(2)
+                        # 絞り込んだ条件でプライム商品があれば値段を取得
+                        prime = "prime"
                         information_block = driver.find_elements(by=By.CSS_SELECTOR, value=".aod-information-block")
-                        # アイテムのリストから一つずつ情報を取得
-                        for information in information_block:
-                            status = information.find_element(by=By.TAG_NAME, value="h5").text
-                            flg = False
-                            rows = information.find_elements(by=By.CSS_SELECTOR, value=".a-fixed-left-grid-inner")
-                            # アイテムの情報から１行ずつ値を取得し、出荷元の情報なら変数に格納
-                            for row in rows:
-                                head = row.find_elements(by=By.TAG_NAME, value="span")
-                                if head[0].text=="出荷元" and (head[1].text=="Amazon" or head[1].text=="Amazon.co.jp") and status=="新品":
-                                    # 最低価格
-                                    price = information.find_element(by=By.CSS_SELECTOR, value=".a-price-whole").text
-                                    # prime
-                                    prime = "prime"
-                                    flg = True
-                                    break                        
-                                else:
-                                    continue
-                            # 対象データが取得できたらアイテムリストのループから抜ける
-                            if flg==True:
-                                break
+                        price = information_block[1].find_element(by=By.CSS_SELECTOR, value=".a-price-whole").text                       
                     except:
                         pass                   
             # 公式販売ページの場合
@@ -132,6 +126,27 @@ def main():
                     if row.text == "Amazon" or row.text == "Amazon.co.jp":
                         price = new_item_box.find_elements(by=By.TAG_NAME, value="span")[1].text.lstrip("￥")
                         prime = "prime"
+                if prime == "":
+                    try:
+                        driver.find_element(by=By.CSS_SELECTOR, value="#olpLinkWidget_feature_div > div.a-section.olp-link-widget > span > a > div > div").click()
+                        time.sleep(3)
+                        driver.find_element(by=By.ID, value="aod-filter-string").click()
+                        aod_parent_filter = driver.find_elements(by=By.CSS_SELECTOR, value=".aod-filter-parent-filter")
+                        for aod_filter in aod_parent_filter:
+                            try:
+                                label = aod_filter.find_element(by=By.CSS_SELECTOR, value=".a-icon-prime-jp")
+                                aod_filter.find_element(by=By.CSS_SELECTOR, value=".a-icon-checkbox").click()                
+                            except:
+                                label = aod_filter.find_element(by=By.CSS_SELECTOR, value=".a-size-base")
+                                if label.text=="新品":
+                                    aod_filter.find_element(by=By.CSS_SELECTOR, value=".a-icon-checkbox").click()
+                        time.sleep(2)
+                        # 絞り込んだ条件でプライム商品があれば値段を取得
+                        information_block = driver.find_elements(by=By.CSS_SELECTOR, value=".aod-information-block")
+                        price = information_block[1].find_element(by=By.CSS_SELECTOR, value=".a-price-whole").text   
+                        prime = "prime"                    
+                    except:
+                        pass                    
             log(f"{count}件目【成功！】：{name}")
         
         except:
@@ -163,3 +178,4 @@ def main():
         
 if __name__ == "__main__":        
     main()
+    
