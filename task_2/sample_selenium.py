@@ -79,10 +79,10 @@ def main(is_option: bool = False, page_limit: int=5, hidden_chrome: bool=False):
     if is_option:
         # URLで直接遷移するパターン
         driver.get(f"https://tenshoku.mynavi.jp/list/kw{search_keyword}/?jobsearchType=14&searchType=18")
-        time.sleep(1)
+        time.sleep(3)
     else:
         driver.get("https://tenshoku.mynavi.jp/")
-        time.sleep(1)
+        time.sleep(3)
         try:
             # ポップアップを閉じる（seleniumだけではクローズできない）
             driver.execute_script('document.querySelector(".karte-close").click()')
@@ -168,8 +168,8 @@ def main(is_option: bool = False, page_limit: int=5, hidden_chrome: bool=False):
 
     
 # 直接起動された場合はmain()を起動(モジュールとして呼び出された場合は起動しないようにするため)
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+main()
 
 
               

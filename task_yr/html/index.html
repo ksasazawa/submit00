@@ -1,0 +1,43 @@
+<html>
+    <head>
+        <title>yahooランキング</title>
+        <link rel="stylesheet" href="./style.css">
+    </head>
+    <body>
+        <h2>条件を指定してください。</h2>
+        <table>
+            <tr>
+                <th>上位何位まで取得しますか？</th>
+                <td>                   
+                    <select id="rank_limit" name="rank_limit">
+                        <option value="1">〜２０位</option>
+                        <option value="2">〜４０位</option>
+                        <option value="3">〜６０位</option>
+                        <option value="4">〜８０位</option>
+                        <option value="5">〜１００位</option>
+                    </select>
+                    <input id="submit" type="submit" name="submit" value="実行">
+                </td>
+            </tr>
+        </table>
+        <textarea id="target"></textarea>
+        <script type="text/javascript" src="./eel.js"></script>
+        <script>
+            var rank_limit = document.getElementById('rank_limit');           
+            //クリックがあった場合の処理
+            submit.addEventListener('click', () => {
+                //空欄だった場合
+                if(rank_limit.value==""){
+                    alert('検索ワードを入力してください');
+                }
+                //入力があった場合
+                else{
+                    async function run(){
+                        await eel.scraping(rank_limit.value)()
+                    }
+                    run();
+                }
+            });
+        </script>
+    </body>
+</html>
