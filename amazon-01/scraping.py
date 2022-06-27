@@ -1,11 +1,34 @@
 import os
 import pandas as pd
 import time
+import datetime
 
 from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
+
+
+# LOGファイルパス
+LOG_FILE_PATH = "log/log_{datetime}.log"
+log_file_path = LOG_FILE_PATH.format(datetime=datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
+
+
+# ファイルの作成
+def makedir_for_filepath(filepath: str):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+    
+# ログとコンソールへの出力
+def log(txt):
+    now = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+    logStr = '[%s: %s] %s' % ('log', now , txt)
+    # ログ出力
+    makedir_for_filepath(log_file_path)
+    with open(log_file_path, 'a', encoding='utf-8_sig') as f:
+        f.write(logStr + '\n')
+    print(logStr)
+
 
 # メイン処理
 def main(df):
@@ -31,6 +54,7 @@ def main(df):
         return Chrome(service=service, options=options)
 
     item_info = []
+    count = 0
     
     driver = set_driver()
     url = "https://www.amazon.co.jp/dp/{asin}"
@@ -39,26 +63,33 @@ def main(df):
     # １商品ごとにループ
     for asin in df['ASIN']:
         driver.get(url.format(asin=asin))
+        count += 1
         time.sleep(3)
         
         # 検索画面上でprime判定ができなかった場合
-        def listing(prime, price):
+        def listing(prime, price, count, branch):
             time.sleep(2)
             # 新品アンド中古品リストがある場合
             try:
-                listing_box = driver.find_element(by=By.CSS_SELECTOR, value=".olp-link-widget")
-            # 新品アンド中古品リストがない場合（「全ての出品」の場合）
+                listing_box = driver.find_element(by=By.CSS_SELECTOR, value=".olp-touch-link")
+                listing_url = listing_box.get_attribute("href")
+                all_item_button = "item_list"
+            # 新品アンド中古品リストがない場合
             except:
                 # 「全ての出品」がある場合
                 try:
                     listing_box = driver.find_element(by=By.CSS_SELECTOR, value="#buybox-see-all-buying-choices")
+                    listing_url = listing_box.find_element(by=By.TAG_NAME, value="a").get_attribute("href")
+                    all_item_button = "all_listing"
                 # 「在庫なし」などその他の場合
                 except:
+                    log(f"{count}件目：{asin}：fail(prime/price)>{branch}>all_item_button")
                     return prime, price
-            listing_url = listing_box.find_element(by=By.TAG_NAME, value="a").get_attribute("href")
             idx = listing_url.find(asin)
             driver.get("https://www.amazon.co.jp/gp/offer-listing/"+asin+"/"+listing_url[idx+1:])
             time.sleep(3)
+            
+            # 新品・primeに絞り込み
             try:
                 driver.find_element(by=By.ID, value="aod-filter-string").click()
                 time.sleep(2)
@@ -67,46 +98,52 @@ def main(df):
                 new_check = driver.find_element(by=By.ID, value="new")
                 new_check.find_element(by=By.TAG_NAME, value="i").click()
                 time.sleep(2)
+            # 絞り込みができない場合（商品が一つしかない場合など）
             except:
                 pass
+            
+            # prime、priceの取得
             try:
                 information_block = driver.find_elements(by=By.CSS_SELECTOR, value=".aod-information-block")
                 price = information_block[1].find_element(by=By.CSS_SELECTOR, value=".a-price-whole").text 
                 prime = "prime"
+                log(f"{count}件目：{asin}：success(prime/price)>{branch}>{all_item_button}")
             except:
+                log(f"{count}件目：{asin}：fail(prime/price)>{branch}>{all_item_button}")
                 pass
             return prime, price
         
         
         # <<名前その他の情報を取得>>
-        # 商品名
-        name = driver.find_element(by=By.CSS_SELECTOR, value=".product-title-word-break").text
-        # 画像URL
         try:
-            image_url = driver.find_element(by=By.ID, value="landingImage").get_attribute("src")
+            # 商品名
+            name = driver.find_element(by=By.CSS_SELECTOR, value=".product-title-word-break").text
+            # 画像URL
+            try:
+                image_url = driver.find_element(by=By.ID, value="landingImage").get_attribute("src")
+            except:
+                iamge_url_relay = driver.find_element(by=By.CSS_SELECTOR, value=".itemNo0")
+                image_url = iamge_url_relay.find_element(by=By.CSS_SELECTOR, value=".a-dynamic-image").get_attribute("src")
+            # レビュー数、レビュー
+            try:
+                review_count = driver.find_element(by=By.CSS_SELECTOR, value="#reviewsMedley > div > div.a-fixed-left-grid-col.a-col-left > div.a-section.a-spacing-none.a-spacing-top-mini.cr-widget-ACR > div.a-row.a-spacing-medium.averageStarRatingNumerical > span").text.rstrip("件のグローバル評価")
+                review = driver.find_element(by=By.XPATH, value='//span[@data-hook="rating-out-of-text"]').text.replace("星5つ中の","")   
+            except:
+                review_count = 0
+                review = ""
+            # 商品説明
+            item_detail = ""
+            item_detail_relay_1 = driver.find_element(by=By.ID, value="feature-bullets")
+            item_detail_relay_2s = item_detail_relay_1.find_elements(by=By.TAG_NAME, value="span")
+            for item_detail_relay_2 in item_detail_relay_2s:
+                item_detail += item_detail_relay_2.text+"\n"
         except:
-            iamge_url_relay = driver.find_element(by=By.CSS_SELECTOR, value=".itemNo0")
-            image_url = iamge_url_relay.find_element(by=By.CSS_SELECTOR, value=".a-dynamic-image").get_attribute("src")
-        # レビュー数、レビュー
-        try:
-            review_count = driver.find_element(by=By.CSS_SELECTOR, value="#reviewsMedley > div > div.a-fixed-left-grid-col.a-col-left > div.a-section.a-spacing-none.a-spacing-top-mini.cr-widget-ACR > div.a-row.a-spacing-medium.averageStarRatingNumerical > span").text.rstrip("件のグローバル評価")
-            review = driver.find_element(by=By.XPATH, value='//span[@data-hook="rating-out-of-text"]').text.replace("星5つ中の","")   
-        except:
-            review_count = 0
-            review = ""
-        # 商品説明
-        item_detail = ""
-        item_detail_relay_1 = driver.find_element(by=By.ID, value="feature-bullets")
-        item_detail_relay_2s = item_detail_relay_1.find_elements(by=By.TAG_NAME, value="span")
-        for item_detail_relay_2 in item_detail_relay_2s:
-            item_detail += item_detail_relay_2.text+"\n"
-        # プライムと値段（初期化）
-        prime = ""
-        price = ""
+            pass
         
         
         # <<prime,値段の取得>>
-        
+        prime = ""
+        price = ""
         buy_box = driver.find_element(by=By.ID, value="buybox")
         # buy_boxで通常注文と定期注文が分かれている否かの判定
         try:
@@ -124,6 +161,7 @@ def main(df):
         
         # buyboxに通常注文のみの場合   
         if normal_buy_box=="nothing" and buy_box_texts!="nothing":
+            branch = "buy_box_no_separation"
             # 画面上で取得できる場合
             for buy_box_text in buy_box_texts:
                 # ボックス内でプライム対象商品があった場合
@@ -135,30 +173,34 @@ def main(df):
                     # 赤字の値段
                     except:
                         price = driver.find_element(by=By.CSS_SELECTOR, value="#corePrice_feature_div > div > span.a-price.a-text-price.a-size-medium > span:nth-child(2)").text.lstrip("￥")
+                    log(f"{count}件目：{asin}：success(prime/price)>{branch}")
                 
             # 画面上では取得できなかった場合
             if prime == "":
-                result = listing(prime, price)
+                result = listing(prime, price, count, branch)
                 prime = result[0]
                 price = result[1]
         
         
         # buyboxに通常注文と定期注文が分かれている場合
         elif normal_buy_box!="nothing" and buy_box_texts!="nothin":
+            branch = "buy_box_separation"
             spans = normal_buy_box.find_elements(by=By.TAG_NAME, value="span")
             for span in spans:
                 if span.text == "Amazon" or span.text == "Amazon.co.jp":
                     price = spans[1].text.lstrip("￥")
                     prime = "prime"
+                    log(f"{count}件目：{asin}：success(prime/price)>{branch}")
             if prime == "":
-                result = listing(prime, price)
+                result = listing(prime, price, count, branch)
                 prime = result[0]
                 price = result[1]
             
             
         # buyboxに何の情報もない場合
         elif normal_buy_box=="nothing" and buy_box_texts=="nothing":
-            result = listing(prime, price)
+            branch = "buy_box_no_informaition"
+            result = listing(prime, price, count, branch)
             prime = result[0]
             price = result[1]
        
