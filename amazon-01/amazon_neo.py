@@ -1,5 +1,4 @@
 import os
-import time
 import datetime
 import pandas as pd
 import scraping
