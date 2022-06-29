@@ -8,26 +8,15 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
-# LOGファイルパス
-LOG_FILE_PATH = "log/log_{datetime}.log"
-log_file_path = LOG_FILE_PATH.format(datetime=datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
-# CSVファイルパス
-EXP_CSV_PATH = "amazon_csv/exp_list_{datetime}.csv"
+scope = ['https://spreadsheets.google.com/feeds',
+         'https://www.googleapis.com/auth/drive']
 
-# ファイルの作成
-def makedir_for_filepath(filepath: str):
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
-    
-# ログとコンソールへの出力
-def log(txt):
-    now = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-    logStr = '[%s: %s] %s' % ('log', now , txt)
-    # ログ出力
-    makedir_for_filepath(log_file_path)
-    with open(log_file_path, 'a', encoding='utf-8_sig') as f:
-        f.write(logStr + '\n')
-    print(logStr)
+credentials = ServiceAccountCredentials.from_json_keyfile_name('/Users/estyle-086/Downloads/gcp-credentials.json', scope)
+gc = gspread.authorize(credentials)
+wks = gc.open('test_gspread').sheet1
 
 # ドライバの定義
 def set_driver():
@@ -147,7 +136,6 @@ def main():
                         prime = "prime"                    
                     except:
                         pass                    
-            log(f"{count}件目【成功！】：{name}")
         
         except:
             name = ""
@@ -156,25 +144,34 @@ def main():
             review_count = ""
             review = ""
             image_url = ""
-            log(f"{count}件目【失敗、、、】：{name}")
+            
+        wks.update_acell('A'+str(count) , asin)
+        wks.update_acell('B'+str(count) , name)
+        wks.update_acell('C'+str(count) , url.format(asin=asin))
+        wks.update_acell('D'+str(count) , price)
+        wks.update_acell('E'+str(count) , prime)
+        wks.update_acell('F'+str(count) , review_count)
+        wks.update_acell('G'+str(count) , review)
+        wks.update_acell('H'+str(count) , image_url)
+        
                             
-        item_info.append({
-            "ASIN": asin,
-            "商品名": name,
-            "URL": url.format(asin=asin),
-            "最低価格": price,
-            "prime": prime,
-            "評価件数": review_count,
-            "評価": review,
-            "画像URL": image_url
-        })
+        # item_info.append({
+        #     "ASIN": asin,
+        #     "商品名": name,
+        #     "URL": url.format(asin=asin),
+        #     "最低価格": price,
+        #     "prime": prime,
+        #     "評価件数": review_count,
+        #     "評価": review,
+        #     "画像URL": image_url
+        # })
+        time.sleep(5)
         count+=1
+        
 
-    # CSVファイル保存処理
-    now = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-    makedir_for_filepath(EXP_CSV_PATH) 
-    df = pd.DataFrame.from_dict(item_info, dtype=object)
-    df.to_csv(EXP_CSV_PATH.format(datetime=now), encoding="utf-8-sig")
+
+    
         
 if __name__ == "__main__":        
     main()
+    
