@@ -150,7 +150,7 @@ def main(df):
                     #マウスオーバー処理
                     actions.move_to_element(thumbnail).perform()
                     time.sleep(1)
-                    image_url += driver.find_element(by=By.CSS_SELECTOR, value=f".itemNo{str(thumbnail_cnt)}").find_element(by=By.TAG_NAME, value="img").get_attribute("src") + "\n"
+                    image_url += driver.find_element(by=By.CSS_SELECTOR, value=f".itemNo{str(thumbnail_cnt)}").find_element(by=By.TAG_NAME, value="img").get_attribute("src") + " "
                     thumbnail_cnt+=1
                 # image_url = driver.find_element(by=By.ID, value="landingImage").get_attribute("src")
             except:
