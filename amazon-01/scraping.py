@@ -1,5 +1,4 @@
 import os
-import pandas as pd
 import time
 import datetime
 
@@ -7,6 +6,7 @@ from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.action_chains import ActionChains
 
 
 # LOGファイルパス
@@ -46,7 +46,7 @@ def main(df):
         options.add_argument('log-level=3') # 不要なログを非表示にする
         options.add_argument('--ignore-certificate-errors') # 不要なログを非表示にする
         options.add_argument('--ignore-ssl-errors') # 不要なログを非表示にする
-        options.add_experimental_option('excludeSwitches', ['enable-logging']) # 不要なログを非表示にする
+        # options.add_experimental_option('excludeSwitches', ['enable-logging']) # 不要なログを非表示にする
         options.add_argument('--incognito') # シークレットモードの設定を付与
         
         # ChromeのWebDriverオブジェクトを作成する。
@@ -55,17 +55,20 @@ def main(df):
 
     item_info = []
     count = 0
+    first_con_flg = False
     
     driver = set_driver()
     url = "https://www.amazon.co.jp/dp/{asin}"
-
-    
+        
     # １商品ごとにループ
     for asin in df['ASIN']:
         driver.get(url.format(asin=asin))
         count += 1
         time.sleep(3)
         
+        if count == 1 or (count==2 and first_con_flg == True):
+            time.sleep(10)
+            
         # 検索画面上でprime判定ができなかった場合
         def listing(prime, price, count, branch):
             time.sleep(2)
@@ -100,8 +103,17 @@ def main(df):
                 time.sleep(2)
             # 絞り込みができない場合（商品が一つしかない場合など）
             except:
-                pass
-            
+                try:
+                    status = driver.find_elements(by=By.CSS_SELECTOR, value=".aod-information-block")[1].find_element(by=By.CSS_SELECTOR, value="#aod-offer-heading").text.strip()
+                    shipper = driver.find_elements(by=By.CSS_SELECTOR, value=".aod-information-block")[1].find_element(by=By.CSS_SELECTOR, value="#aod-offer-shipsFrom").find_elements(by=By.CSS_SELECTOR, value="span")[1].text
+                    print(status)
+                    print(shipper)
+                    if status=="新品" and (shipper=="Amazon" or shipper=="Amazon.co.jp"):
+                        pass
+                    else:
+                        return prime, price
+                except:
+                    return prime, price
             # prime、priceの取得
             try:
                 information_block = driver.find_elements(by=By.CSS_SELECTOR, value=".aod-information-block")
@@ -114,16 +126,37 @@ def main(df):
             return prime, price
         
         
-        # <<名前その他の情報を取得>>
+        # 変数の初期化
+        name = ""
+        review_count = ""
+        review = ""
+        image_url = ""
+        item_detail = ""
+        stock = ""
+        d_charge = ""
+        prime = ""
+        price = ""
+        
+        # <<名前その他の情報の取得>>
         try:
             # 商品名
             name = driver.find_element(by=By.CSS_SELECTOR, value=".product-title-word-break").text
             # 画像URL
             try:
-                image_url = driver.find_element(by=By.ID, value="landingImage").get_attribute("src")
+                actions = ActionChains(driver)                
+                thumbnails = driver.find_elements(by=By.CSS_SELECTOR, value=".imageThumbnail")
+                thumbnail_cnt = 0
+                for thumbnail in thumbnails:
+                    #マウスオーバー処理
+                    actions.move_to_element(thumbnail).perform()
+                    time.sleep(1)
+                    image_url += driver.find_element(by=By.CSS_SELECTOR, value=f".itemNo{str(thumbnail_cnt)}").find_element(by=By.TAG_NAME, value="img").get_attribute("src") + "\n"
+                    thumbnail_cnt+=1
+                # image_url = driver.find_element(by=By.ID, value="landingImage").get_attribute("src")
             except:
-                iamge_url_relay = driver.find_element(by=By.CSS_SELECTOR, value=".itemNo0")
-                image_url = iamge_url_relay.find_element(by=By.CSS_SELECTOR, value=".a-dynamic-image").get_attribute("src")
+                pass
+                # iamge_url_relay = driver.find_element(by=By.CSS_SELECTOR, value=".itemNo0")
+                # image_url = iamge_url_relay.find_element(by=By.CSS_SELECTOR, value=".a-dynamic-image").get_attribute("src")
             # レビュー数、レビュー
             try:
                 review_count = driver.find_element(by=By.CSS_SELECTOR, value="#reviewsMedley > div > div.a-fixed-left-grid-col.a-col-left > div.a-section.a-spacing-none.a-spacing-top-mini.cr-widget-ACR > div.a-row.a-spacing-medium.averageStarRatingNumerical > span").text.rstrip("件のグローバル評価")
@@ -137,13 +170,43 @@ def main(df):
             item_detail_relay_2s = item_detail_relay_1.find_elements(by=By.TAG_NAME, value="span")
             for item_detail_relay_2 in item_detail_relay_2s:
                 item_detail += item_detail_relay_2.text+"\n"
+            # 在庫
+            try:
+                stock = driver.find_element(by=By.CSS_SELECTOR, value="#availability").find_element(by=By.TAG_NAME, value="span").text
+            except:
+                pass
+            # 配送料
+            try:
+                span_all = driver.find_element(by=By.CSS_SELECTOR, value="#mir-layout-DELIVERY_BLOCK-slot-PRIMARY_DELIVERY_MESSAGE_LARGE").find_element(by=By.TAG_NAME, value="span")
+                span_remove = span_all.find_element(by=By.CSS_SELECTOR, value=".a-text-bold")
+                driver.execute_script('arguments[0].remove()', span_remove)
+                d_charge = span_all.text.lstrip("配送料 ¥")
+            except:
+                d_charge = driver.find_element(by=By.CSS_SELECTOR, value="#mir-layout-DELIVERY_BLOCK-slot-NO_PROMISE_UPSELL_MESSAGE").text.lstrip("￥").rstrip(" でお届け")
+            # 全ての画像
+            # try:
+            #     driver.find_element(by=By.CSS_SELECTOR, value = ".itemNo")
         except:
-            pass
+            item_info.append({
+                "ASIN": asin,
+                "商品名": name,
+                "URL": url.format(asin=asin),
+                "最低価格": price,
+                "prime": prime,
+                "評価件数": review_count,
+                "評価": review,
+                "画像URL": image_url,
+                "商品説明": item_detail,
+                "在庫": stock,
+                "配送料": d_charge
+            })
+            log(f"{count}件目：{asin}：error：商品ページがないか、エラーが起こっています。")
+            if count==1:
+                first_con_flg = True
+            continue
         
         
         # <<prime,値段の取得>>
-        prime = ""
-        price = ""
         buy_box = driver.find_element(by=By.ID, value="buybox")
         # buy_boxで通常注文と定期注文が分かれている否かの判定
         try:
@@ -220,7 +283,9 @@ def main(df):
             "評価件数": review_count,
             "評価": review,
             "画像URL": image_url,
-            "商品説明": item_detail
+            "商品説明": item_detail,
+            "在庫": stock,
+            "配送料": d_charge
         })
         
     return item_info
