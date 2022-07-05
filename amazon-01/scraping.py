@@ -66,6 +66,7 @@ def main(df):
         count += 1
         time.sleep(3)
         
+        # １商品目の場合、または１商品目がなかった場合の２商品目は１０秒間お届け先選択の時間を設ける
         if count == 1 or (count==2 and first_con_flg == True):
             time.sleep(10)
             
@@ -88,6 +89,7 @@ def main(df):
                 except:
                     log(f"{count}件目：{asin}：fail(prime/price)>{branch}>all_item_button")
                     return prime, price
+            # リストを開いたページへ遷移
             idx = listing_url.find(asin)
             driver.get("https://www.amazon.co.jp/gp/offer-listing/"+asin+"/"+listing_url[idx+1:])
             time.sleep(3)
@@ -106,8 +108,6 @@ def main(df):
                 try:
                     status = driver.find_elements(by=By.CSS_SELECTOR, value=".aod-information-block")[1].find_element(by=By.CSS_SELECTOR, value="#aod-offer-heading").text.strip()
                     shipper = driver.find_elements(by=By.CSS_SELECTOR, value=".aod-information-block")[1].find_element(by=By.CSS_SELECTOR, value="#aod-offer-shipsFrom").find_elements(by=By.CSS_SELECTOR, value="span")[1].text
-                    print(status)
-                    print(shipper)
                     if status=="新品" and (shipper=="Amazon" or shipper=="Amazon.co.jp"):
                         pass
                     else:
@@ -125,6 +125,16 @@ def main(df):
                 pass
             return prime, price
         
+        def get_d_charge():
+            try:
+                span_all = driver.find_element(by=By.CSS_SELECTOR, value="#mir-layout-DELIVERY_BLOCK-slot-PRIMARY_DELIVERY_MESSAGE_LARGE").find_element(by=By.TAG_NAME, value="span")
+                span_remove = span_all.find_element(by=By.CSS_SELECTOR, value=".a-text-bold")
+                # spanタグの中から、子要素のspan（月日の情報）を除外
+                driver.execute_script('arguments[0].remove()', span_remove)
+                d_charge = span_all.text.lstrip("配送料 ¥")
+            except:
+                d_charge = driver.find_element(by=By.CSS_SELECTOR, value="#mir-layout-DELIVERY_BLOCK-slot-NO_PROMISE_UPSELL_MESSAGE").text.lstrip("￥").rstrip(" でお届け")
+            return d_charge
         
         # 変数の初期化
         name = ""
@@ -146,8 +156,8 @@ def main(df):
                 actions = ActionChains(driver)                
                 thumbnails = driver.find_elements(by=By.CSS_SELECTOR, value=".imageThumbnail")
                 thumbnail_cnt = 0
+                # 商品サムネを一枚ずつマウスオーバーして情報取得
                 for thumbnail in thumbnails:
-                    #マウスオーバー処理
                     actions.move_to_element(thumbnail).perform()
                     time.sleep(1)
                     image_url += driver.find_element(by=By.CSS_SELECTOR, value=f".itemNo{str(thumbnail_cnt)}").find_element(by=By.TAG_NAME, value="img").get_attribute("src") + " "
@@ -160,16 +170,18 @@ def main(df):
             # レビュー数、レビュー
             try:
                 review_count = driver.find_element(by=By.CSS_SELECTOR, value="#reviewsMedley > div > div.a-fixed-left-grid-col.a-col-left > div.a-section.a-spacing-none.a-spacing-top-mini.cr-widget-ACR > div.a-row.a-spacing-medium.averageStarRatingNumerical > span").text.rstrip("件のグローバル評価")
-                review = driver.find_element(by=By.XPATH, value='//span[@data-hook="rating-out-of-text"]').text.replace("星5つ中の","")   
+                review = driver.find_element(by=By.XPATH, value='//span[@data-hook="rating-out-of-text"]').text.replace("星5つ中の","")
             except:
                 review_count = 0
                 review = ""
             # 商品説明
-            item_detail = ""
-            item_detail_relay_1 = driver.find_element(by=By.ID, value="feature-bullets")
-            item_detail_relay_2s = item_detail_relay_1.find_elements(by=By.TAG_NAME, value="span")
-            for item_detail_relay_2 in item_detail_relay_2s:
-                item_detail += item_detail_relay_2.text+"\n"
+            try:
+                item_detail_relay_1 = driver.find_element(by=By.ID, value="feature-bullets")
+                item_detail_relay_2s = item_detail_relay_1.find_elements(by=By.TAG_NAME, value="span")
+                for item_detail_relay_2 in item_detail_relay_2s:
+                    item_detail += item_detail_relay_2.text+"\n"
+            except:
+                pass
             # 在庫
             try:
                 stock = driver.find_element(by=By.CSS_SELECTOR, value="#availability").find_element(by=By.TAG_NAME, value="span").text
@@ -177,16 +189,11 @@ def main(df):
                 pass
             # 配送料
             try:
-                span_all = driver.find_element(by=By.CSS_SELECTOR, value="#mir-layout-DELIVERY_BLOCK-slot-PRIMARY_DELIVERY_MESSAGE_LARGE").find_element(by=By.TAG_NAME, value="span")
-                span_remove = span_all.find_element(by=By.CSS_SELECTOR, value=".a-text-bold")
-                driver.execute_script('arguments[0].remove()', span_remove)
-                d_charge = span_all.text.lstrip("配送料 ¥")
+                d_charge = get_d_charge()
             except:
-                d_charge = driver.find_element(by=By.CSS_SELECTOR, value="#mir-layout-DELIVERY_BLOCK-slot-NO_PROMISE_UPSELL_MESSAGE").text.lstrip("￥").rstrip(" でお届け")
-            # 全ての画像
-            # try:
-            #     driver.find_element(by=By.CSS_SELECTOR, value = ".itemNo")
+                pass
         except:
+            # 商品ページがないか、エラーが起こった場合
             item_info.append({
                 "ASIN": asin,
                 "商品名": name,
