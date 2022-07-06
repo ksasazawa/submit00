@@ -71,7 +71,7 @@ def main(df):
             time.sleep(10)
             
         # 検索画面上でprime判定ができなかった場合
-        def listing(prime, price, count, branch):
+        def listing(prime, price, d_charge, count, branch):
             time.sleep(2)
             # 新品アンド中古品リストがある場合
             try:
@@ -88,7 +88,7 @@ def main(df):
                 # 「在庫なし」などその他の場合
                 except:
                     log(f"{count}件目：{asin}：fail(prime/price)>{branch}>all_item_button")
-                    return prime, price
+                    return prime, price, d_charge
             # リストを開いたページへ遷移
             idx = listing_url.find(asin)
             driver.get("https://www.amazon.co.jp/gp/offer-listing/"+asin+"/"+listing_url[idx+1:])
@@ -111,19 +111,24 @@ def main(df):
                     if status=="新品" and (shipper=="Amazon" or shipper=="Amazon.co.jp"):
                         pass
                     else:
-                        return prime, price
+                        return prime, price, d_charge
                 except:
-                    return prime, price
+                    return prime, price, d_charge
             # prime、priceの取得
             try:
                 information_block = driver.find_elements(by=By.CSS_SELECTOR, value=".aod-information-block")
                 price = information_block[1].find_element(by=By.CSS_SELECTOR, value=".a-price-whole").text 
                 prime = "prime"
+                span_all = information_block[1].find_element(by=By.CSS_SELECTOR, value="#mir-layout-DELIVERY_BLOCK-slot-PRIMARY_DELIVERY_MESSAGE_LARGE").find_element(by=By.TAG_NAME, value="span")
+                span_remove = span_all.find_element(by=By.CSS_SELECTOR, value=".a-text-bold")
+                # spanタグの中から、子要素のspan（月日の情報）を除外
+                driver.execute_script('arguments[0].remove()', span_remove)
+                d_charge = span_all.text.lstrip("配送料 ¥")
                 log(f"{count}件目：{asin}：success(prime/price)>{branch}>{all_item_button}")
             except:
                 log(f"{count}件目：{asin}：fail(prime/price)>{branch}>{all_item_button}")
                 pass
-            return prime, price
+            return prime, price, d_charge
         
         def get_d_charge():
             try:
@@ -247,9 +252,10 @@ def main(df):
                 
             # 画面上では取得できなかった場合
             if prime == "":
-                result = listing(prime, price, count, branch)
+                result = listing(prime, price, d_charge, count, branch)
                 prime = result[0]
                 price = result[1]
+                d_charge = result[2]
         
         
         # buyboxに通常注文と定期注文が分かれている場合
@@ -262,17 +268,19 @@ def main(df):
                     prime = "prime"
                     log(f"{count}件目：{asin}：success(prime/price)>{branch}")
             if prime == "":
-                result = listing(prime, price, count, branch)
+                result = listing(prime, price, d_charge, count, branch)
                 prime = result[0]
                 price = result[1]
+                d_charge = result[2]
             
             
         # buyboxに何の情報もない場合
         elif normal_buy_box=="nothing" and buy_box_texts=="nothing":
             branch = "buy_box_no_informaition"
-            result = listing(prime, price, count, branch)
+            result = listing(prime, price, d_charge, count, branch)
             prime = result[0]
             price = result[1]
+            d_charge = result[2]
        
         
         # その他
