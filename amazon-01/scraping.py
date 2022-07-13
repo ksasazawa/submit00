@@ -129,7 +129,20 @@ def main(df):
                 log(f"{count}件目：{asin}：fail(prime/price)>{branch}>{all_item_button}")
                 pass
             return prime, price, d_charge
-        
+
+        def get_size(size):
+            try:
+                regist_infos = driver.find_element(by=By.CSS_SELECTOR, value="#detailBullets_feature_div").find_elements(by=By.TAG_NAME, value="li")
+                for regist_info in regist_infos:
+                    if "梱包サイズ" in regist_info.find_elements(by=By.CSS_SELECTOR, value="span > span")[0].text:
+                        size = regist_info.find_elements(by=By.CSS_SELECTOR, value="span > span")[1].text
+            except:
+                detail_infos = driver.find_element(by=By.CSS_SELECTOR, value="#productDetails_techSpec_section_1").find_elements(by=By.TAG_NAME, value="tr")
+                for detail_info in detail_infos:
+                    if "梱包サイズ" in detail_info.find_element(by=By.TAG_NAME, value="th").text:
+                        size = detail_info.find_element(by=By.TAG_NAME, value="td").text
+            return size
+       
         def get_d_charge():
             try:
                 span_all = driver.find_element(by=By.CSS_SELECTOR, value="#mir-layout-DELIVERY_BLOCK-slot-PRIMARY_DELIVERY_MESSAGE_LARGE").find_element(by=By.TAG_NAME, value="span")
@@ -147,6 +160,7 @@ def main(df):
         review = ""
         image_url = ""
         item_detail = ""
+        size = ""
         stock = ""
         d_charge = ""
         prime = ""
@@ -187,6 +201,11 @@ def main(df):
                     item_detail += item_detail_relay_2.text+"\n"
             except:
                 pass
+            # 梱包サイズ
+            try:
+                size = get_size(size)
+            except:
+                pass
             # 在庫
             try:
                 stock = driver.find_element(by=By.CSS_SELECTOR, value="#availability").find_element(by=By.TAG_NAME, value="span").text
@@ -209,6 +228,7 @@ def main(df):
                 "評価": review,
                 "画像URL": image_url,
                 "商品説明": item_detail,
+                "梱包サイズ": size,
                 "在庫": stock,
                 "配送料": d_charge
             })
@@ -299,6 +319,7 @@ def main(df):
             "評価": review,
             "画像URL": image_url,
             "商品説明": item_detail,
+            "梱包サイズ": size,
             "在庫": stock,
             "配送料": d_charge
         })

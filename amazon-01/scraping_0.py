@@ -124,12 +124,26 @@ def main(df):
                 pass
             return prime, price
         
+        def get_size(size):
+            try:
+                regist_infos = driver.find_element(by=By.CSS_SELECTOR, value="#detailBullets_feature_div").find_elements(by=By.TAG_NAME, value="li")
+                for regist_info in regist_infos:
+                    if "梱包サイズ" in regist_info.find_elements(by=By.CSS_SELECTOR, value="span > span")[0].text:
+                        size = regist_info.find_elements(by=By.CSS_SELECTOR, value="span > span")[1].text
+            except:
+                detail_infos = driver.find_element(by=By.CSS_SELECTOR, value="#productDetails_techSpec_section_1").find_elements(by=By.TAG_NAME, value="tr")
+                for detail_info in detail_infos:
+                    if "梱包サイズ" in detail_info.find_element(by=By.TAG_NAME, value="th").text:
+                        size = detail_info.find_element(by=By.TAG_NAME, value="td").text
+            return size
+        
         # 変数の初期化
         name = ""
         review_count = ""
         review = ""
         image_url = ""
         item_detail = ""
+        size = ""
         prime = ""
         price = ""
         
@@ -160,6 +174,11 @@ def main(df):
                     item_detail += item_detail_relay_2.text+"\n"
             except:
                 pass
+            # 梱包サイズ
+            try:
+                size = get_size(size)
+            except:
+                pass
         except:
             # 商品ページがないか、エラーが起こった場合
             item_info.append({
@@ -172,6 +191,7 @@ def main(df):
                 "評価": review,
                 "画像URL": image_url,
                 "商品説明": item_detail,
+                "梱包サイズ": size
             })
             log(f"{count}件目：{asin}：error：商品ページがないか、エラーが起こっています。")
             continue
@@ -255,6 +275,7 @@ def main(df):
             "評価": review,
             "画像URL": image_url,
             "商品説明": item_detail,
+            "梱包サイズ": size
         })
         
     return item_info
