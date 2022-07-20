@@ -136,8 +136,8 @@ def main(df, limit):
                         log(f"{count}件目：fail(prime/price)>{branch}>all_item_button")
                         return prime, price, d_charge
                 # リストを開いたページへ遷移
-                idx = listing_url.find(asin)
-                driver.get("https://www.amazon.co.jp/gp/offer-listing/"+asin+"/"+listing_url[idx+1:])
+                idx = listing_url.find(asin["ASIN"])
+                driver.get("https://www.amazon.co.jp/gp/offer-listing/"+asin["ASIN"]+"/"+listing_url[idx+1:])
                 time.sleep(3)
                 
                 # 新品・primeに絞り込み
@@ -335,7 +335,7 @@ def main(df, limit):
             time.sleep(20)
             driver.find_element(by=By.ID ,value="nav-bb-search").clear()
             driver.find_element(by=By.ID ,value="nav-bb-search").send_keys(search_name)
-            driver.find_element(by=By.ID, value="nav-search-submit-button").click()
+            driver.find_element(by=By.ID, value="nav-bb-button").click()
         time.sleep(3)
         item_asin = []
         
@@ -401,6 +401,7 @@ def main(df, limit):
                 try:
                     driver.find_element(by=By.CSS_SELECTOR, value="a.s-pagination-next").click()
                     log("次ページ") # 削除
+                    time.sleep(3)
                 # 次ページがない場合
                 except:
                     log("次ページなし") # 削除
