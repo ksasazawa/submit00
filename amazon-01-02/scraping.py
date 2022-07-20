@@ -34,7 +34,7 @@ def log(txt):
     print(logStr)
 
 
-def main(df, limit, max_price):
+def main(df, limit):
     
     # # ドライバの定義
     # def set_driver():
@@ -192,16 +192,7 @@ def main(df, limit, max_price):
                 name = driver.find_element(by=By.CSS_SELECTOR, value=".product-title-word-break").text
                 # 画像URL
                 try:
-                    actions = ActionChains(driver)                
-                    thumbnails = driver.find_elements(by=By.CSS_SELECTOR, value=".imageThumbnail")
-                    thumbnail_cnt = 0
-                    # 商品サムネを一枚ずつマウスオーバーして情報取得
-                    for thumbnail in thumbnails:
-                        actions.move_to_element(thumbnail).perform()
-                        time.sleep(1)
-                        image_url += driver.find_element(by=By.CSS_SELECTOR, value=f".itemNo{str(thumbnail_cnt)}").find_element(by=By.TAG_NAME, value="img").get_attribute("src") + " "
-                        thumbnail_cnt+=1
-                    # image_url = driver.find_element(by=By.ID, value="landingImage").get_attribute("src")
+                    image_url = driver.find_element(by=By.CSS_SELECTOR, value=".itemNo0").find_element(by=By.TAG_NAME, value="img").get_attribute("src")
                 except:
                     pass
                     # iamge_url_relay = driver.find_element(by=By.CSS_SELECTOR, value=".itemNo0")
@@ -335,14 +326,15 @@ def main(df, limit, max_price):
     asin_list = []
     
     for search_name, mercari_url, mercari_image_url, mercari_price in zip(df["検索KW"], df["対象商品ページURL"], df["対象商品画像URL"], df["対象商品価格"]):
-        log(search_name)
+        log(f"KW:{search_name}")
         try:
             driver.find_element(by=By.ID ,value="twotabsearchtextbox").clear()
             driver.find_element(by=By.ID ,value="twotabsearchtextbox").send_keys(search_name)
             driver.find_element(by=By.ID, value="nav-search-submit-button").click()
         except:
-            driver.find_element(by=By.ID ,value="nav-bb-textbox").clear()
-            driver.find_element(by=By.ID ,value="nav-bb-textbox").send_keys(search_name)
+            time.sleep(20)
+            driver.find_element(by=By.ID ,value="nav-bb-search").clear()
+            driver.find_element(by=By.ID ,value="nav-bb-search").send_keys(search_name)
             driver.find_element(by=By.ID, value="nav-search-submit-button").click()
         time.sleep(3)
         item_asin = []
@@ -352,13 +344,16 @@ def main(df, limit, max_price):
             driver.find_element(by=By.CSS_SELECTOR, value=".a-star-medium-4").click()
             time.sleep(2)
         except:
-            driver.find_element(by=By.CSS_SELECTOR, value=".a-dropdown-container").click()
-            lis = driver.find_element(by=By.CSS_SELECTOR, value=".a-popover-inner").find_elements(by=By.CSS_SELECTOR, value="li")
-            for li in lis:
-                if li.text.strip() == "レビューの評価順":
-                    li.click()
-                    time.sleep(2)
-                    break
+            try:
+                driver.find_element(by=By.CSS_SELECTOR, value=".a-dropdown-container").click()
+                lis = driver.find_element(by=By.CSS_SELECTOR, value=".a-popover-inner").find_elements(by=By.CSS_SELECTOR, value="li")
+                for li in lis:
+                    if li.text.strip() == "レビューの評価順":
+                        li.click()
+                        time.sleep(2)
+                        break
+            except:
+                continue
         
         # ページごとにループ
         while True:
@@ -377,7 +372,7 @@ def main(df, limit, max_price):
                 try:
                     item.find_element(by=By.CSS_SELECTOR, value=".a-icon-prime")
                     item_price = item.find_element(by=By.CSS_SELECTOR, value=".a-price-whole").text.lstrip('￥').replace(',', '')
-                    if int(item_price) <= int(max_price) and item.get_attribute("data-asin") not in sponsored_asin:
+                    if int(item_price) <= int(mercari_price) and item.get_attribute("data-asin") not in sponsored_asin:
                         item_asin.append({
                             "検索KW": search_name,
                             "対象商品ページURL": mercari_url,
