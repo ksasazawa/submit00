@@ -34,7 +34,7 @@ def log(txt):
     print(logStr)
 
 
-def main(df, limit):
+def main(df, limit, address, password):
     
     # # ドライバの定義
     # def set_driver():
@@ -107,6 +107,7 @@ def main(df, limit):
     def item_scraping(asin_list):
         
         item_info = []
+        all_count = len(asin_list)
         count = 0
         url = "https://www.amazon.co.jp/dp/{asin}"
         
@@ -133,7 +134,7 @@ def main(df, limit):
                         all_item_button = "all_listing"
                     # 「在庫なし」などその他の場合
                     except:
-                        log(f"{count}件目：fail(prime/price)>{branch}>all_item_button")
+                        log(f"全{all_count}商品中{count}番目のデータを取得：fail(prime/price)>{branch}>all_item_button")
                         return prime, price, d_charge
                 # リストを開いたページへ遷移
                 idx = listing_url.find(asin["ASIN"])
@@ -157,8 +158,10 @@ def main(df, limit):
                         if status=="新品" and (shipper=="Amazon" or shipper=="Amazon.co.jp"):
                             pass
                         else:
+                            log(f"全{all_count}商品中{count}番目のデータを取得：fail(prime/price)>{branch}>{all_item_button}")
                             return prime, price, d_charge
                     except:
+                        log(f"全{all_count}商品中{count}番目のデータを取得：fail(prime/price)>{branch}>{all_item_button}")
                         return prime, price, d_charge
                 # prime、priceの取得
                 try:
@@ -170,9 +173,9 @@ def main(df, limit):
                     # spanタグの中から、子要素のspan（月日の情報）を除外
                     driver.execute_script('arguments[0].remove()', span_remove)
                     d_charge = span_all.text.lstrip("配送料 ¥")
-                    log(f"{count}件目：success(prime/price)>{branch}>{all_item_button}")
+                    log(f"全{all_count}商品中{count}番目のデータを取得：success(prime/price)>{branch}>{all_item_button}")
                 except:
-                    log(f"{count}件目：fail(prime/price)>{branch}>{all_item_button}")
+                    log(f"全{all_count}商品中{count}番目のデータを取得：fail(prime/price)>{branch}>{all_item_button}")
                     pass
                 return prime, price, d_charge
             
@@ -263,7 +266,7 @@ def main(df, limit):
                         # 赤字の値段
                         except:
                             price = driver.find_element(by=By.CSS_SELECTOR, value="#corePrice_feature_div > div > span.a-price.a-text-price.a-size-medium > span:nth-child(2)").text.lstrip("￥")
-                        log(f"{count}件目：success(prime/price)>{branch}")
+                        log(f"全{all_count}商品中{count}番目のデータを取得：success(prime/price)>{branch}")
                     
                 # 画面上では取得できなかった場合
                 if prime == "":
@@ -281,7 +284,7 @@ def main(df, limit):
                     if span.text == "Amazon" or span.text == "Amazon.co.jp":
                         price = spans[1].text.lstrip("￥")
                         prime = "prime"
-                        log(f"{count}件目：success(prime/price)>{branch}")
+                        log(f"全{all_count}商品中{count}番目のデータを取得：success(prime/price)>{branch}")
                 if prime == "":
                     result = listing(prime, price, d_charge, count, branch)
                     prime = result[0]
@@ -320,6 +323,12 @@ def main(df, limit):
             
         return item_info
     
+    driver.get("https://carriercentral.amazon.co.jp/ap/signin?openid.return_to=https%3A%2F%2Fcarriercentral.amazon.co.jp%2Frequest&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.assoc_handle=amzn_magicarp_desktop_jp&openid.mode=checkid_setup&language=ja_JP&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&pageId=amzn_magicarp_desktop_jp&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0")
+    time.sleep(2)
+    driver.find_element(by=By.CSS_SELECTOR, value="#ap_email").send_keys(address)
+    driver.find_element(by=By.CSS_SELECTOR, value="#ap_password").send_keys(password)
+    driver.find_element(by=By.CSS_SELECTOR, value="#signInSubmit").click()
+    time.sleep(2)
     driver.get("https://www.amazon.co.jp/")
     time.sleep(3)
     
@@ -339,10 +348,19 @@ def main(df, limit):
         time.sleep(3)
         item_asin = []
         
+        # 通常配送料無料に絞り込み（primeの代わり）
+        try:
+            driver.find_element(by=By.CSS_SELECTOR, value="#primeRefinements").find_element(by=By.TAG_NAME, value="i").click()
+            time.sleep(2)
+            print("配送料無料")
+        except:
+            pass
+        
         # 星４以上の商品に絞り込み
         try:
             driver.find_element(by=By.CSS_SELECTOR, value=".a-star-medium-4").click()
             time.sleep(2)
+            print("星４")
         except:
             try:
                 driver.find_element(by=By.CSS_SELECTOR, value=".a-dropdown-container").click()
@@ -370,7 +388,7 @@ def main(df, limit):
             for item in items:
                 # プライム・指定価格以下の商品に絞り込み
                 try:
-                    item.find_element(by=By.CSS_SELECTOR, value=".a-icon-prime")
+                    # item.find_element(by=By.CSS_SELECTOR, value=".a-icon-prime")
                     item_price = item.find_element(by=By.CSS_SELECTOR, value=".a-price-whole").text.lstrip('￥').replace(',', '')
                     if int(item_price) <= int(mercari_price) and item.get_attribute("data-asin") not in sponsored_asin:
                         item_asin.append({

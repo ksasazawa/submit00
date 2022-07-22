@@ -15,9 +15,10 @@ def makedir_for_filepath(filepath: str):
 def main():
     
     limit = input("取得する商品数を入力してください。（半角数字）＞＞")
-    max_price = input("最高価格を入力してください。（半角数字）＞＞")
+    address = input("メールアドレス＞＞")
+    password = input("パスワード＞＞")
     df = pd.read_csv(os.path.join(os.getcwd(), "itemlist.csv"))
-    item_info = scraping.main(df=df, limit=limit, max_price=max_price)
+    item_info = scraping.main(df=df, limit=limit, address=address, password=password)
         
     # CSVファイル保存処理
     now = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
