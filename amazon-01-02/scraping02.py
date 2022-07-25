@@ -402,6 +402,9 @@ def main(df, limit):
                 except:
                     pass
                 
+            if sponsored_asin != [] and item_asin == []:
+                break
+                
             # log(f"アイテムASINースポンサーASIN:{len(item_asin)}")
             
             # 商品数が足りない場合
