@@ -329,10 +329,10 @@ def main(df, limit):
         return item_info
     
     driver.get("https://www.amazon.co.jp/")
+    df_output = pd.DataFrame()
     time.sleep(3)
     
-    asin_list = []
-    df_output = pd.DataFrame()
+    # asin_list = []
     
     for search_name, mercari_url, mercari_image_url, mercari_price in zip(df["検索KW"], df["対象商品ページURL"], df["対象商品画像URL"], df["対象商品価格"]):
         log(f"KW:{search_name}")
@@ -344,14 +344,14 @@ def main(df, limit):
             time.sleep(20)
             driver.find_element(by=By.ID ,value="nav-bb-search").clear()
             driver.find_element(by=By.ID ,value="nav-bb-search").send_keys(search_name)
-            driver.find_element(by=By.ID, value="nav-bb-button").click()
+            driver.find_element(by=By.CSS_SELECTOR, value=".nav-bb-button").click()
         time.sleep(3)
         item_asin = []
         
         # 星４以上の商品に絞り込み
         try:
             driver.find_element(by=By.CSS_SELECTOR, value=".a-star-medium-4").click()
-            time.sleep(2)
+            time.sleep(3)
         except:
             try:
                 driver.find_element(by=By.CSS_SELECTOR, value=".a-dropdown-container").click()
@@ -359,7 +359,7 @@ def main(df, limit):
                 for li in lis:
                     if li.text.strip() == "レビューの評価順":
                         li.click()
-                        time.sleep(2)
+                        time.sleep(3)
                         break
             except:
                 continue
@@ -415,27 +415,37 @@ def main(df, limit):
                 except:
                     log("次ページなし") # 削除
                     log(f"検索ページ計＞＞＞＞＞{len(item_asin)}")
-                    for ia in item_asin[:int(limit)]:
-                        asin_list.append(ia)
+                    # for ia in item_asin[:int(limit)]:
+                    #     asin_list.append(ia)
                     item_info = item_scraping(item_asin[:int(limit)])
+                    time.sleep(5)
                     if df_output.empty:
                         df_output = pd.DataFrame.from_dict(item_info, dtype=object)
                         df_output.to_csv(EXP_CSV_PATH, encoding="utf-8-sig")
                     else:
-                        df_output = pd.DataFrame.from_dict(item_info, dtype=object)
-                        df_output.to_csv(EXP_CSV_PATH, mode='a', header=False, encoding="utf-8-sig")
+                        df_output_relay = pd.DataFrame.from_dict(item_info, dtype=object)
+                        if df_output_relay.empty:
+                            pass
+                        else:
+                            df_output = df_output_relay
+                            df_output.to_csv(EXP_CSV_PATH, mode='a', header=False, encoding="utf-8-sig")
                     break
             # 商品数が足りている場合
             else:
                 log(f"検索ページ計＞＞＞＞＞{len(item_asin)}") # 削除
-                for ia in item_asin[:int(limit)]:
-                    asin_list.append(ia)
+                # for ia in item_asin[:int(limit)]:
+                #     asin_list.append(ia)
                 item_info = item_scraping(item_asin[:int(limit)])
+                time.sleep(5)
                 if df_output.empty:
                     df_output = pd.DataFrame.from_dict(item_info, dtype=object)
                     df_output.to_csv(EXP_CSV_PATH, encoding="utf-8-sig")
                 else:
-                    df_output = pd.DataFrame.from_dict(item_info, dtype=object)
-                    df_output.to_csv(EXP_CSV_PATH, mode='a', header=False, encoding="utf-8-sig")
+                    df_output_relay = pd.DataFrame.from_dict(item_info, dtype=object)
+                    if df_output_relay.empty:
+                        pass
+                    else:
+                        df_output = df_output_relay
+                        df_output.to_csv(EXP_CSV_PATH, mode='a', header=False, encoding="utf-8-sig")
                 break
 
