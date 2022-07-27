@@ -337,14 +337,17 @@ def main(df, limit):
     for search_name, mercari_url, mercari_image_url, mercari_price in zip(df["検索KW"], df["対象商品ページURL"], df["対象商品画像URL"], df["対象商品価格"]):
         log(f"KW:{search_name}")
         try:
+            if search_name == "子供 デイパック キッズ バッグ 女の子 男の子 小学生 キッズリュック 防水":
+                driver.find_element(by=By.ID ,value="nav-bb-search").clear()
             driver.find_element(by=By.ID ,value="twotabsearchtextbox").clear()
             driver.find_element(by=By.ID ,value="twotabsearchtextbox").send_keys(search_name)
             driver.find_element(by=By.ID, value="nav-search-submit-button").click()
         except:
-            time.sleep(20)
-            driver.find_element(by=By.ID ,value="nav-bb-search").clear()
-            driver.find_element(by=By.ID ,value="nav-bb-search").send_keys(search_name)
-            driver.find_element(by=By.CSS_SELECTOR, value=".nav-bb-button").click()
+            input("検索エラー。スキップする場合はエンターを押してください。")
+            continue
+            # driver.find_element(by=By.ID ,value="nav-bb-search").clear()
+            # driver.find_element(by=By.ID ,value="nav-bb-search").send_keys(search_name)
+            # driver.find_element(by=By.CSS_SELECTOR, value=".nav-bb-button").click()
         time.sleep(3)
         item_asin = []
         
