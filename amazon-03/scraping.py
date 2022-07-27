@@ -1,18 +1,17 @@
 import os
 import time
 import datetime
-import math
-from concurrent.futures import ThreadPoolExecutor
-import re
-import platform
+# from concurrent.futures import ThreadPoolExecutor
+# import re
+# import platform
 
-import requests
 from selenium.webdriver import Chrome, ChromeOptions
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+# import requests
+# from selenium import webdriver
+# from selenium.webdriver.chrome.options import Options
 
 
 # LOGファイルパス
@@ -63,12 +62,15 @@ def main(df):
     driver.get("https://www.amazon.co.jp/")
     time.sleep(3)
     
-    item_info = []
+    item_info_list = []
+    kw_list = []
+    prime = df["prime"][0]
         
     for search_name in df["検索KW"]:
         log(f"KW:{search_name}")
         page_cnt = 0
         item_cnt = 0
+        item_info = []
         
         try:
             driver.find_element(by=By.ID ,value="twotabsearchtextbox").clear()
@@ -79,15 +81,25 @@ def main(df):
             driver.find_element(by=By.ID ,value="nav-bb-search").clear()
             driver.find_element(by=By.ID ,value="nav-bb-search").send_keys(search_name)
             driver.find_element(by=By.ID, value="nav-bb-button").click()
-        time.sleep(3)
+        time.sleep(3)            
     
         # ページごと
         while True:
             page_cnt += 1
+            # print(f"{page_cnt}ページ目です。")
+            time.sleep(3)
             items = driver.find_elements(by=By.CSS_SELECTOR, value=".s-asin")
             
             for item in items:
                 item_cnt += 1
+                # プライムチェック
+                if prime == "prime":
+                    try:
+                        item.find_element(by=By.CSS_SELECTOR, value=".a-icon-prime")
+                    except:
+                        # print("continue")
+                        time.sleep(0.1)
+                        continue
                 try:
                     asin = item.get_attribute("data-asin")
                     url = f"https://www.amazon.co.jp/dp/{asin}"
@@ -117,10 +129,15 @@ def main(df):
                     "URL": url
                 })
             try:
+                # print("次ページ")
                 driver.find_element(by=By.CSS_SELECTOR, value="a.s-pagination-next").click()
                 time.sleep(3)
             except:
+                # print("次ページなし")
+                # input("待ちます")
+                item_info_list.append(item_info)
+                kw_list.append(search_name)
                 break
             
-    return item_info
+    return kw_list, item_info_list
 
